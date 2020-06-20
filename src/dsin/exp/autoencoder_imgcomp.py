@@ -101,7 +101,7 @@ class Dec_Cs(Enc_Cs):
 
         self.dec_resblock = {'in_channels': self.n , 'out_channels': self.n,
                   **self.padding_stride1_kernel3,
-                  **self.modifiable_conv2d}
+                  **super().modifiable_conv2d}
         self.dec_uber_resblock = {'num_of_resblocks': 3, 'resblock':self.dec_resblock}
         self.dec_uber_resblocks = {'num_of_uberresblocks': 5, 'uberresblock':self.dec_uber_resblock}
 
