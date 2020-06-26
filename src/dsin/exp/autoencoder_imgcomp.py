@@ -21,6 +21,9 @@ class ChangeImageStatsToKitti(nn.Module):
         super().__init__()
         self.direction = direction
 
+        mean, var = self._get_stats()
+        self.mean, self.var = nn.Parameter(mean), nn.Parameter(var)
+
     def forward(self, x):
         if self.direction == ChangeState.NORMALIZE:
             return self._normalize(x)
@@ -32,12 +35,12 @@ class ChangeImageStatsToKitti(nn.Module):
             raise ValueError(f'Invalid stats change direction {self.direction}')
 
     def _normalize(self, x):
-        mean, var = self._get_stats()
-        return (x - mean) / torch.sqrt(var + self.SIGMA_MIN)
+
+        return (x - self.mean) / torch.sqrt( self.var + self.SIGMA_MIN)
 
     def _denormalize(self, x):
-        mean, var = self._get_stats()
-        return (x * torch.sqrt(var +  self.SIGMA_MIN5)) + mean
+
+        return (x * torch.sqrt(self.var +  self.SIGMA_MIN5)) + self.mean
 
     @staticmethod
     def _get_stats():
