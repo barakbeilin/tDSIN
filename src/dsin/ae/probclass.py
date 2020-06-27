@@ -129,7 +129,8 @@ class MaskedConv3d(nn.Module):
         #   https://pytorch.org/docs/master/generated/torch.nn.Conv3d.html
 
         # TF: mask.unsqueeze_(-1).unsqueeze_(-1)
-        mask.unsqueeze_(0).unsqueeze_(0)
+        # oiDHW ->outChannels|inChannels|Depth|H|W
+        mask.unsqueeze_(0).unsqueeze_(0) 
         return mask
 
 
@@ -144,17 +145,16 @@ class MaskedResblock(nn.Module):
 
     def forward(self, x):
         y = self.model(x)
-        # z = x[..., 2:, 2:-2, 2:-2, :]  # fit the padding
-        z = x[:, :, 2:, 2:-2, 2:-2]  # fit the padding
-        print('xyz')
+        unpad_x = x[:, :, 2:, 2:-2, 2:-2]  # fit residual input padding
+        # unpad_x = x[..., 2:, 2:-2, 2:-2, :]  # original
+        assert y.shape == unpad_x.shape
+        # >>help in case of bug
+        # print('x\unpad_x\conv_output')
+        # print(x.shape)
+        # print(unpad_x.shape)
+        # print(y.shape)
 
-        print(x.shape)
-        print(y.shape)
-        print(z.shape)
-        import ipdb
-
-        ipdb.set_trace()
-        return y + z
+        return unpad_x + y
 
     @staticmethod
     def _create_mask_b_conv(channels, filter_shape):
@@ -169,7 +169,7 @@ class ProbClassifier(nn.Module):
         self, classifier_in_channels, classifier_out_channels, receptive_field=3
     ):
         super().__init__()
-
+        self.receptive_field = receptive_field
         K = receptive_field
         self.filter_shape = (K // 2 + 1, K, K)  # CHW
         CONV0_OUT_CH = 24
@@ -178,21 +178,15 @@ class ProbClassifier(nn.Module):
         conv0 = MaskedConv3d(
             in_channels=classifier_in_channels,
             out_channels=CONV0_OUT_CH,
-            kernel_size=self.filter_shape,
             filter_mask=mask_A,
         )
 
-        resblock = MaskedResblock(
-            channels=CONV0_OUT_CH,
-            filter_shape=self.filter_shape,
-            kernel_size=self.filter_shape,
-        )
+        resblock = MaskedResblock(channels=CONV0_OUT_CH, filter_shape=self.filter_shape)
 
-        mask_B = MaskedConv3d.create_maskB(self.kernel_size, zero_center_pixel=False)
+        mask_B = MaskedConv3d.create_mask(self.filter_shape, zero_center_pixel=False)
         conv2 = MaskedConv3d(
             in_channels=CONV0_OUT_CH,
             out_channels=classifier_out_channels,
-            kernel_size=self.filter_shape,
             filter_mask=mask_B,
         )
 
@@ -201,6 +195,9 @@ class ProbClassifier(nn.Module):
         )
 
     def forward(self, x):
+        import ipdb; ipdb.set_trace()
+        assert len(x.shape) == 4 #NCHW
+        x.unsqueeze_(0) #
         return self.model(x)
 
     def zero_pad_layer(self):
@@ -208,11 +205,16 @@ class ProbClassifier(nn.Module):
         :param x: NCHW tensorflow Tensor or numpy array
         """
         nof_conv_layers_classifier = 4  # 4 convd3d layers
-        context_size = nof_conv_layers_classifier * (self.kernel_size - 1) + 1
+        context_size = nof_conv_layers_classifier * (self.receptive_field - 1) + 1
+        
         pad = context_size // 2  # 4
 
         # padding_left , padding_right , padding_top , padding_bottom , padding_front , padding_back
 
-        pads = (pad, pad, pad, pad, pad, 0)
+        pad_N = (0,0)
+        pad_C = (pad, 0)
+        pad_HW =(pad,pad)
 
+        pads = pad_HW + pad_HW + pad_C + pad_N
+        # import ipdb; ipdb.set_trace()
         return nn.ConstantPad3d(pads, value=0)
