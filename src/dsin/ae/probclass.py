@@ -4,6 +4,7 @@ import torch
 import torch.nn.functional as F
 from torch import nn
 from enum import Enum, auto
+from typing import Tuple
 
 
 #  def bitcost(self, q, target_symbols, is_training, pad_value=0):
@@ -53,23 +54,24 @@ from enum import Enum, auto
 
 
 class MaskedConv3d(nn.Module):
-    def __init__(self, in_channels, out_channels, kernel_size, filter_mask):
+    def __init__(self, in_channels, out_channels, filter_mask):
         """
         custom config of conv3d:
         - use VALID padding (i.e no padding)
-        - weight initz - xaviel_init
+        - weight init - xaviel_init
         - bias init - zero_init
         """
         super().__init__()
+        self.kernel_size = tuple(filter_mask.shape)[2:]  # NDCHW -> CHW
         self.filter_mask = nn.Parameter(filter_mask)
         self.conv = nn.Conv3d(
             in_channels=in_channels,
             out_channels=out_channels,
-            kernel_size=kernel_size,
+            kernel_size=self.kernel_size,
             bias=True,
         )
 
-        # initalize layer
+        # initalize the conv layer
         nn.init.xavier_uniform_(self.conv.weight)
         nn.init.constant_(self.conv.bias, 0)
 
@@ -79,117 +81,118 @@ class MaskedConv3d(nn.Module):
 
     def _mask_conv_filter(self):
         with torch.no_grad():
-            print((self.conv.weight.shape))
-            print((self.filter_mask.shape))
-            self.conv.weight = self.conv.weight * self.filter_mask
+            # print((self.conv.weight.shape))
+            # print((self.filter_mask.shape))
+            self.conv.weight.data = self.conv.weight.data * self.filter_mask
 
     @staticmethod
-    def create_maskA(kernel_size, filter_shape):
-        """create 5d mask that includes all pixel's in strictly before"""
-        K = kernel_size
+    def create_mask(filter_shape: Tuple, zero_center_pixel: bool):
+        """create 5d mask that includes all pixel's in strictly before
+        Parameters : 
+        filter_shape: Tuple of the shape, should be 3d
+        zero_center_pixel: maskA<->True maskB<->False
+        """
+        assert (
+            len(filter_shape) == 3
+        ), f"filter_shape size must be 3 instead {len(filter_shape.size)}"
+
+        K = filter_shape[2]  # K = W
         # mask is DHW
         mask = torch.ones(filter_shape, dtype=torch.float32, requires_grad=False)
+
         # zero out D=1,
-        # - everything to the right of the central pixel, including the central pixel
-        mask[-1, K // 2, K // 2 :] = 0
+        if zero_center_pixel:
+            # zero out- everything to the right of the central pixel,
+            # including the central pixel
+            mask[-1, K // 2, K // 2 :] = 0
+        else:
+            # zero out- everything to the right of the central pixel,
+            # not including the central pixel
+            mask[-1, K // 2, K // 2 + 1 :] = 0
+
         # - all rows below the central row
         mask[-1, K // 2 + 1 :, :] = 0
 
         # Make into ioDHW, for broadcasting with 3D filters
-        # !!! This is different than tensorflow since the dimension order is 
-        # different between tf and torch, notice the the (in)out-channel dimensions 
+        # !!! This is different than tensorflow since the dimension order is
+        # different between tf and torch, notice the the (in)out-channel dimensions
         # are at the end for TF while they are in the begininng for torch.
         # conv3d.weight dimensions are:
-        # TF : 
+        # TF :
         # [filter_depth, filter_height, filter_width, in_channels,out_channels]
         #   Link:
         #   https://www.tensorflow.org/api_docs/python/tf/compat/v1/nn/conv3d
         #
-        # torch : 
+        # torch :
         # (out_channels, in_channels, kernel_size[0],kernel_size[1],kernel_size[2])
         #   Link:
         #   https://pytorch.org/docs/master/generated/torch.nn.Conv3d.html
 
-
-        # TF: mask.unsqueeze_(-1).unsqueeze_(-1) 
-        mask.unsqueeze_(0).unsqueeze_(0) 
+        # TF: mask.unsqueeze_(-1).unsqueeze_(-1)
+        mask.unsqueeze_(0).unsqueeze_(0)
         return mask
 
-    @staticmethod
-    def old_create_maskB(kernel_size, filter_shape):
-        """create 5d mask that includes all pixel's in before and current pixel"""
-        K = kernel_size
-        # mask is DHW
-        mask = torch.ones(filter_shape, dtype=torch.float32, requires_grad=False)
-        # zero out D=1,
-        # - everything to the right of the central pixel, including the central pixel
-        mask[-1, K // 2, K // 2 + 1 :] = 0
-        # - all rows below the central row
-        mask[-1, K // 2 + 1 :, :] = 0
-
-        mask.unsqueeze_(0).unsqueeze_(
-            0
-        )  # Make into DHWio, for broadcasting with 3D filters
-        return mask
-
-    @staticmethod
-    def create_maskB(kernel_size, filter_shape):
-        """create 5d mask that includes all pixel's in before and current pixel"""
-        K = kernel_size
-        mask = MaskedConv3d.create_maskA(kernel_size,filter_shape)
-        # add current pixel to the mask 
-        mask[0, 0, -1, K // 2, K // 2 ] = 1
-        return mask
 
 class MaskedResblock(nn.Module):
-    def __init__(self, channels, filter_shape, kernel_size):
+    def __init__(self, channels, filter_shape):
         super().__init__()
 
-        conv0 = self._create_mask_b_conv(channels, filter_shape, kernel_size)
-        conv2 = self._create_mask_b_conv(channels, filter_shape, kernel_size)
+        conv0 = self._create_mask_b_conv(channels, filter_shape)
+        conv2 = self._create_mask_b_conv(channels, filter_shape)
 
         self.model = nn.Sequential(conv0, nn.ReLU(), conv2)
 
     def forward(self, x):
-        return self.model(x) + x[..., 2:, 2:-2, 2:-2, :]  # fit the padding
+        y = self.model(x)
+        # z = x[..., 2:, 2:-2, 2:-2, :]  # fit the padding
+        z = x[:, :, 2:, 2:-2, 2:-2]  # fit the padding
+        print('xyz')
+
+        print(x.shape)
+        print(y.shape)
+        print(z.shape)
+        import ipdb
+
+        ipdb.set_trace()
+        return y + z
 
     @staticmethod
-    def _create_mask_b_conv(channels, filter_shape, kernel_size):
-        mask = MaskedConv3d.create_maskB(kernel_size, filter_shape)
+    def _create_mask_b_conv(channels, filter_shape):
+        maskB = MaskedConv3d.create_mask(filter_shape, zero_center_pixel=False)
         return MaskedConv3d(
-            in_channels=channels,
-            out_channels=channels,
-            kernel_size=kernel_size,
-            filter_mask=mask,
+            in_channels=channels, out_channels=channels, filter_mask=maskB,
         )
 
 
 class ProbClassifier(nn.Module):
-    def __init__(self, classifier_in_channels, classifier_out_channels, kernel_size=3):
+    def __init__(
+        self, classifier_in_channels, classifier_out_channels, receptive_field=3
+    ):
         super().__init__()
-        self.kernel_size = kernel_size
 
-        K = self.kernel_size
+        K = receptive_field
         self.filter_shape = (K // 2 + 1, K, K)  # CHW
         CONV0_OUT_CH = 24
 
-        mask_A = MaskedConv3d.create_maskA(self.kernel_size, self.filter_shape)
+        mask_A = MaskedConv3d.create_mask(self.filter_shape, zero_center_pixel=True)
         conv0 = MaskedConv3d(
             in_channels=classifier_in_channels,
             out_channels=CONV0_OUT_CH,
-            kernel_size=kernel_size,
+            kernel_size=self.filter_shape,
             filter_mask=mask_A,
         )
 
         resblock = MaskedResblock(
-            channels=CONV0_OUT_CH, filter_shape=self.filter_shape, kernel_size=K
+            channels=CONV0_OUT_CH,
+            filter_shape=self.filter_shape,
+            kernel_size=self.filter_shape,
         )
 
-        mask_B = MaskedConv3d.create_maskB(self.kernel_size, self.filter_shape)
+        mask_B = MaskedConv3d.create_maskB(self.kernel_size, zero_center_pixel=False)
         conv2 = MaskedConv3d(
             in_channels=CONV0_OUT_CH,
             out_channels=classifier_out_channels,
-            kernel_size=kernel_size,
+            kernel_size=self.filter_shape,
             filter_mask=mask_B,
         )
 
