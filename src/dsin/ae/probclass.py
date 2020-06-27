@@ -53,7 +53,7 @@ from enum import Enum, auto
 
 
 class MaskedConv3d(nn.Module):
-    def __init__(self,in_channels, out_channels,kernel_size, filter_mask):
+    def __init__(self, in_channels, out_channels, kernel_size, filter_mask):
         """
         custom config of conv3d:
         - use VALID padding (i.e no padding)
@@ -62,16 +62,18 @@ class MaskedConv3d(nn.Module):
         """
         super().__init__()
         self.filter_mask = nn.Parameter(filter_mask)
-        self.conv = nn.Conv3d(in_channels=in_channels, out_channels=out_channels ,
-                        kernel_size=kernel_size, bias= True)
+        self.conv = nn.Conv3d(
+            in_channels=in_channels,
+            out_channels=out_channels,
+            kernel_size=kernel_size,
+            bias=True,
+        )
 
         # initalize layer
         nn.init.xavier_uniform_(self.conv.weight)
         nn.init.constant_(self.conv.bias, 0)
 
-
-
-    def forward(self,x):
+    def forward(self, x):
         self._mask_conv_filter()
         return self.conv(x)
 
@@ -83,99 +85,131 @@ class MaskedConv3d(nn.Module):
 
     @staticmethod
     def create_maskA(kernel_size, filter_shape):
-            """create 5d mask that includes all pixel's in strictly before"""
-            K = kernel_size
-            # mask is DHW
-            mask = torch.ones(filter_shape, dtype=torch.float32, requires_grad=False)
-            # zero out D=1,
-            # - everything to the right of the central pixel, including the central pixel
-            mask[-1, K // 2, K // 2:] = 0
-            # - all rows below the central row
-            mask[-1, K // 2 + 1:, :] = 0
+        """create 5d mask that includes all pixel's in strictly before"""
+        K = kernel_size
+        # mask is DHW
+        mask = torch.ones(filter_shape, dtype=torch.float32, requires_grad=False)
+        # zero out D=1,
+        # - everything to the right of the central pixel, including the central pixel
+        mask[-1, K // 2, K // 2 :] = 0
+        # - all rows below the central row
+        mask[-1, K // 2 + 1 :, :] = 0
 
-            mask.unsqueeze_(-1).unsqueeze_(-1)  # Make into DHWio, for broadcasting with 3D filters
-            return mask
+        # Make into ioDHW, for broadcasting with 3D filters
+        # !!! This is different than tensorflow since the dimension order is 
+        # different between tf and torch, notice the the (in)out-channel dimensions 
+        # are at the end for TF while they are in the begininng for torch.
+        # conv3d.weight dimensions are:
+        # TF : 
+        # [filter_depth, filter_height, filter_width, in_channels,out_channels]
+        #   Link:
+        #   https://www.tensorflow.org/api_docs/python/tf/compat/v1/nn/conv3d
+        #
+        # torch : 
+        # (out_channels, in_channels, kernel_size[0],kernel_size[1],kernel_size[2])
+        #   Link:
+        #   https://pytorch.org/docs/master/generated/torch.nn.Conv3d.html
+
+
+        # TF: mask.unsqueeze_(-1).unsqueeze_(-1) 
+        mask.unsqueeze_(0).unsqueeze_(0) 
+        return mask
 
     @staticmethod
-    def create_maskB(kernel_size, filter_shape):
+    def old_create_maskB(kernel_size, filter_shape):
         """create 5d mask that includes all pixel's in before and current pixel"""
         K = kernel_size
         # mask is DHW
         mask = torch.ones(filter_shape, dtype=torch.float32, requires_grad=False)
         # zero out D=1,
         # - everything to the right of the central pixel, including the central pixel
-        mask[-1, K // 2, K // 2 + 1:] = 0
+        mask[-1, K // 2, K // 2 + 1 :] = 0
         # - all rows below the central row
-        mask[-1, K // 2 + 1:, :] = 0
+        mask[-1, K // 2 + 1 :, :] = 0
 
-        mask.unsqueeze_(-1).unsqueeze_(-1)  # Make into DHWio, for broadcasting with 3D filters
+        mask.unsqueeze_(0).unsqueeze_(
+            0
+        )  # Make into DHWio, for broadcasting with 3D filters
         return mask
 
-
+    @staticmethod
+    def create_maskB(kernel_size, filter_shape):
+        """create 5d mask that includes all pixel's in before and current pixel"""
+        K = kernel_size
+        mask = MaskedConv3d.create_maskA(kernel_size,filter_shape)
+        # add current pixel to the mask 
+        mask[0, 0, -1, K // 2, K // 2 ] = 1
+        return mask
 
 class MaskedResblock(nn.Module):
-    def __init__(self,channels,filter_shape, kernel_size ):
+    def __init__(self, channels, filter_shape, kernel_size):
         super().__init__()
 
+        conv0 = self._create_mask_b_conv(channels, filter_shape, kernel_size)
+        conv2 = self._create_mask_b_conv(channels, filter_shape, kernel_size)
 
-        conv0 = self._create_mask_b_conv(channels,filter_shape, kernel_size)
-        conv2 = self._create_mask_b_conv(channels,filter_shape, kernel_size)
+        self.model = nn.Sequential(conv0, nn.ReLU(), conv2)
 
-        self.model = nn.Sequential(conv0,nn.ReLU(),conv2)
-
-    def forward(self,x):
-        return self.model(x) + x[..., 2:, 2:-2, 2:-2, :] # fit the padding
+    def forward(self, x):
+        return self.model(x) + x[..., 2:, 2:-2, 2:-2, :]  # fit the padding
 
     @staticmethod
-    def _create_mask_b_conv(channels,filter_shape, kernel_size ):
+    def _create_mask_b_conv(channels, filter_shape, kernel_size):
         mask = MaskedConv3d.create_maskB(kernel_size, filter_shape)
-        return MaskedConv3d(in_channels=channels,out_channels= channels,kernel_size=kernel_size,
-                         filter_mask=mask)
-
-
+        return MaskedConv3d(
+            in_channels=channels,
+            out_channels=channels,
+            kernel_size=kernel_size,
+            filter_mask=mask,
+        )
 
 
 class ProbClassifier(nn.Module):
-    def __init__(self,classifier_in_channels,classifier_out_channels,kernel_size = 3 ):
+    def __init__(self, classifier_in_channels, classifier_out_channels, kernel_size=3):
         super().__init__()
         self.kernel_size = kernel_size
 
-
-
-
         K = self.kernel_size
-        self.filter_shape = (K // 2 + 1, K, K) # CHW
-        CONV0_OUT_CH  = 24
-
+        self.filter_shape = (K // 2 + 1, K, K)  # CHW
+        CONV0_OUT_CH = 24
 
         mask_A = MaskedConv3d.create_maskA(self.kernel_size, self.filter_shape)
-        conv0 = MaskedConv3d(in_channels=classifier_in_channels, out_channels=CONV0_OUT_CH,
-                             kernel_size =kernel_size,
-                             filter_mask=mask_A)
+        conv0 = MaskedConv3d(
+            in_channels=classifier_in_channels,
+            out_channels=CONV0_OUT_CH,
+            kernel_size=kernel_size,
+            filter_mask=mask_A,
+        )
 
-        resblock = MaskedResblock(channels=CONV0_OUT_CH,filter_shape= self.filter_shape,kernel_size= K)
+        resblock = MaskedResblock(
+            channels=CONV0_OUT_CH, filter_shape=self.filter_shape, kernel_size=K
+        )
 
         mask_B = MaskedConv3d.create_maskB(self.kernel_size, self.filter_shape)
-        conv2 = MaskedConv3d(in_channels=CONV0_OUT_CH,out_channels= classifier_out_channels,
-                         kernel_size =kernel_size,
-                         filter_mask=mask_B)
+        conv2 = MaskedConv3d(
+            in_channels=CONV0_OUT_CH,
+            out_channels=classifier_out_channels,
+            kernel_size=kernel_size,
+            filter_mask=mask_B,
+        )
 
-        self.model= nn.Sequential(self.zero_pad_layer(),conv0,nn.ReLU(),resblock,conv2,nn.ReLU())
+        self.model = nn.Sequential(
+            self.zero_pad_layer(), conv0, nn.ReLU(), resblock, conv2, nn.ReLU()
+        )
 
-    def forward(self,x):
+    def forward(self, x):
         return self.model(x)
-
 
     def zero_pad_layer(self):
         """
         :param x: NCHW tensorflow Tensor or numpy array
         """
-        nof_conv_layers_classifier = 4 # 4 convd3d layers
-        context_size = nof_conv_layers_classifier *(self.kernel_size - 1) + 1
-        pad = context_size // 2 # 4
+        nof_conv_layers_classifier = 4  # 4 convd3d layers
+        context_size = nof_conv_layers_classifier * (self.kernel_size - 1) + 1
+        pad = context_size // 2  # 4
 
-        #padding_left , padding_right , padding_top , padding_bottom , padding_front , padding_back
+        # padding_left , padding_right , padding_top , padding_bottom , padding_front , padding_back
 
-        pads= (pad,pad,pad,pad,pad,0)
+        pads = (pad, pad, pad, pad, pad, 0)
 
-        return nn.ConstantPad3d(pads,value =0)
+        return nn.ConstantPad3d(pads, value=0)
