@@ -15,46 +15,53 @@ class ChannelOrder(Enum):
     NCHW = auto()
 
 class Quantizer(nn.Module):
-    def __init__(self, device,
+    # >>> test quantizer
+    #     a = Quantizer(5,(0,10),0.1,0.1);
+    #     x = torch.round(torch.rand([3,2,2,2])*10);
+    #     print(x)
+    #     print(a.centers)
+    #     x_soft, x_hard, x_index_of_center =  a(x)
+    #     print(symbols_hard)
+    #     print(x_soft)
+
+    def __init__(self,
                  num_centers,
                  centers_initial_range,
-                 regularization_factor_centers,
-                 sigma,
-                 reg_dtype = torch.float32):
+                 centers_regularization_factor,
+                 sigma):
         super().__init__()
-        self.cdevice = device
         self.num_centers = (num_centers,)
         self.centers_initial_range = centers_initial_range
         self.sigma = sigma
-        self.reg = \
-        torch.torch.as_tensor(regularization_factor_centers, dtype=reg_dtype)
+        self.reg = torch.as_tensor(centers_regularization_factor, dtype=torch.float32)
 
         self._create_centers_variable()
 
     def _create_centers_variable(self, dtype= torch.float32):  # (C, L) or (L,)
-        assert self.num_centers is not None
+
         minval, maxval = map(int, self.centers_initial_range)
         # create a tensor of size with values drawn
         # from uniform distribution
-        centers = torch.rand(*self.num_centers, requires_grad=False, dtype=dtype, device = self.cdevice) \
+        centers = torch.rand(*self.num_centers, dtype=dtype) \
             * (maxval-minval) + minval
+        centers, _ = torch.sort(centers)
         # Wrapping with nn.Parameter ensures it is copied to gpu when .to('cuda') is called
         self.centers = nn.Parameter(centers)
 
     def _create_centers_regularization_term(self):
-        if self.regularization_factor_centers != 0:
+        if self.reg != 0:
             # calculate half the l2 norm  like tf.nn.l2_loss(centers)
-            cetners_reg = 0.5 * reg * torch.nn.norm(self.centers)
+            cetners_reg = 0.5 * self.reg * torch.nn.norm(self.centers)
 
     def __repr__(self):
         return f'{self.__class__.__name__}(sigma={self.sigma})'
 
 
-    def forward(self, x, dataformat: ChannelOrder):
+    def forward(self, x, dataformat: ChannelOrder = ChannelOrder.NCHW):
         assert x.dtype == torch.float32, 'x should be float32'
         assert self.centers.dtype == torch.float32, 'centers should be float32'
-        assert len(x) == 4, f'x should be NCHW or NHWC got {len(x)} instead'
-        assert len(self.centers) == 1, f'centers should be (L,), got {len(centers)}'
+        assert len(x.size()) == 4, f'x should be NCHW or NHWC got {len(x.size())} instead'
+        assert len(a.centers.size()) == 1, f"centers should be (L,), got {len(a.centers.size())}"
 
         # improve numerics by calculating using NCHW
         if dataformat==ChannelOrder.NHWC:
@@ -70,7 +77,7 @@ class Quantizer(nn.Module):
             return x_soft, x_hard, symbols_hard
 
 
-    def _quantize(self, x, sigma):
+    def _quantize(self, x):
 
         N, C, H, W = x.shape
 
@@ -81,8 +88,8 @@ class Quantizer(nn.Module):
         # shape- NCmL, \sum_l d[..., l] sums to 1
         phi_soft = F.softmax(-self.sigma * d, dim=-1)
         # - Calcualte soft assignements ---
-        # NCm, soft assign x to levels
-        x_soft = torch.sum(self.levels * phi_soft, dim=-1)
+        # NCm, soft assign x to centers
+        x_soft = torch.sum(self.centers * phi_soft, dim=-1)
         # NCHW
         x_soft = x_soft.view(N, C, H, W)
 
@@ -94,12 +101,12 @@ class Quantizer(nn.Module):
         # detach d to use values without affecting the gradients
         _, symbols_hard = torch.min(d.detach(), dim=-1)
         # NCHW
-        symbols_hard = symbols_hard.view(N, C, H, W)
+        x_index_of_center = symbols_hard.view(N, C, H, W)
         # NCHW, contains value of symbol to use
-        x_hard = self.levels[symbols_hard]
+        x_hard = self.centers[symbols_hard]
 
         x_soft.data = x_hard  # assign data, keep gradient
-        return x_soft, x_hard, symbols_hard
+        return x_soft, x_hard, x_index_of_center
 
     @staticmethod
     def permute_NHWC_to_NCHW(t):
