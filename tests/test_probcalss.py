@@ -1,6 +1,7 @@
 import unittest
 from dsin.ae.probclass import *
-import consts
+from tests import consts
+
 
 class test_MaskedConv3d(unittest.TestCase):
     def test_createMask(self):
@@ -43,19 +44,23 @@ class test_MaskedResblock(unittest.TestCase):
 
 class test_ProbClassifier(unittest.TestCase):
     def setUp(self):
+        self.batch_size = 2
+        values_per_pixel = 6
         self.l = ProbClassifier(
-            classifier_in_channels=32, classifier_out_channels=6, receptive_field=3
+            classifier_in_3d_channels=1,
+            classifier_out_3d_channels=values_per_pixel,
+            receptive_field=3,
         )
 
-    def test_flow(self):
-        x = torch.rand([2, 32, 5, 5]).unsqueeze(-1)
+    def test_probclass_flow(self):
+        x = torch.randn([self.batch_size, 32, 5, 5])
         y = self.l(x)
-        self.assertEqual(y.shape, (0,))
+        self.assertEqual(y.shape, (2,6, 32, 5, 5))
 
     def test_zero_pad_layer(self):
-        x = torch.ones([2, 32, 5, 5])
-        y= self.l.zero_pad_layer()(x)
-        self.assertEqual(y.shape,(2, 36, 13, 13))
+        x = torch.ones([self.batch_size, 32, 5, 5])
+        y = self.l.zero_pad_layer()(x)
+        self.assertEqual(y.shape, (2, 36, 13, 13))
         self.assertTrue(torch.all(consts.y.eq(y)))
 
 

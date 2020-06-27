@@ -7,52 +7,6 @@ from enum import Enum, auto
 from typing import Tuple
 
 
-#  def bitcost(self, q, target_symbols, is_training, pad_value=0):
-#         """
-#         Pads q, creates PC network, calculates cross entropy between output of PC network and target_symbols
-#         :param q: NCHW
-#         :param target_symbols:
-#         :param is_training:
-#         :return: bitcost per symbol: NCHW
-#         """
-#         tf_helpers.assert_ndims(q, 4)
-
-#         with self._building_ctx(self.reuse):
-#             if self.first_mask is None:
-#                 self.first_mask = self.create_first_mask()  # DHWio
-#                 self.other_mask = self.create_other_mask()  # DHWio
-
-#             self.reuse = True
-
-#             targets_one_hot = tf.one_hot(target_symbols, depth=self.L, axis=-1, name='target_symbols')
-
-#             q_pad = pad_for_probclass3d(
-#                     q, context_size=self.get_context_size(self.config),
-#                     pad_value=pad_value, learn_pad_var=False)
-#             with tf.variable_scope('logits'):
-#                 # make it into NCHWT, where T is the channel dim of the conv3d
-#                 q_pad = tf.expand_dims(q_pad, -1, name='NCHWT')
-#                 logits = self._logits(q_pad, is_training)
-
-#             if self.config.regularization_factor is not None:
-#                 print('Creating PC regularization...')
-#                 weights = _get_all_conv3d_weights_in_scope(self._PROBCLASS_SCOPE)
-#                 assert len(weights) > 0
-#                 reg = self.config.regularization_factor * tf.add_n(list(map(tf.nn.l2_loss, weights)))
-#                 tf.losses.add_loss(reg, tf.GraphKeys.REGULARIZATION_LOSSES)
-
-#             if targets_one_hot.shape.is_fully_defined() and logits.shape.is_fully_defined():
-#                 tf_helpers.assert_equal_shape(targets_one_hot, logits)
-
-#             with tf.name_scope('bitcost'):
-#                 # softmax_cross_entropy_with_logits is basis e, change base to 2
-#                 log_base_change_factor = tf.constant(np.log2(np.e), dtype=tf.float32)
-#                 bc = tf.nn.softmax_cross_entropy_with_logits(
-#                     logits=logits, labels=targets_one_hot) * log_base_change_factor  # NCHW
-
-#             return bc # bit cost
-
-
 class MaskedConv3d(nn.Module):
     def __init__(self, in_channels, out_channels, filter_mask):
         """
@@ -83,6 +37,7 @@ class MaskedConv3d(nn.Module):
         with torch.no_grad():
             # print((self.conv.weight.shape))
             # print((self.filter_mask.shape))
+            # import ipdb; ipdb.set_trace()
             self.conv.weight.data = self.conv.weight.data * self.filter_mask
 
     @staticmethod
@@ -130,7 +85,7 @@ class MaskedConv3d(nn.Module):
 
         # TF: mask.unsqueeze_(-1).unsqueeze_(-1)
         # oiDHW ->outChannels|inChannels|Depth|H|W
-        mask.unsqueeze_(0).unsqueeze_(0) 
+        mask.unsqueeze_(0).unsqueeze_(0)
         return mask
 
 
@@ -166,9 +121,10 @@ class MaskedResblock(nn.Module):
 
 class ProbClassifier(nn.Module):
     def __init__(
-        self, classifier_in_channels, classifier_out_channels, receptive_field=3
+        self, classifier_in_3d_channels, classifier_out_3d_channels, receptive_field=3
     ):
         super().__init__()
+        
         self.receptive_field = receptive_field
         K = receptive_field
         self.filter_shape = (K // 2 + 1, K, K)  # CHW
@@ -176,7 +132,7 @@ class ProbClassifier(nn.Module):
 
         mask_A = MaskedConv3d.create_mask(self.filter_shape, zero_center_pixel=True)
         conv0 = MaskedConv3d(
-            in_channels=classifier_in_channels,
+            in_channels=classifier_in_3d_channels,
             out_channels=CONV0_OUT_CH,
             filter_mask=mask_A,
         )
@@ -186,19 +142,21 @@ class ProbClassifier(nn.Module):
         mask_B = MaskedConv3d.create_mask(self.filter_shape, zero_center_pixel=False)
         conv2 = MaskedConv3d(
             in_channels=CONV0_OUT_CH,
-            out_channels=classifier_out_channels,
+            out_channels=classifier_out_3d_channels,
             filter_mask=mask_B,
         )
-
-        self.model = nn.Sequential(
-            self.zero_pad_layer(), conv0, nn.ReLU(), resblock, conv2, nn.ReLU()
-        )
+        self.premodel = self.zero_pad_layer()
+        self.model = nn.Sequential(conv0, nn.ReLU(), resblock, conv2, nn.ReLU())
 
     def forward(self, x):
-        import ipdb; ipdb.set_trace()
-        assert len(x.shape) == 4 #NCHW
-        x.unsqueeze_(0) #
-        return self.model(x)
+        # import ipdb ;        ipdb.set_trace()
+        assert len(x.shape) == 4  # NCHW
+        padded_x = self.premodel(x)
+        padded_x.unsqueeze_(1)  # NTCHW T->channel dim of the 3dconv
+        
+        assert padded_x.shape[1] == 1  # T = 1
+        
+        return self.model(padded_x)
 
     def zero_pad_layer(self):
         """
@@ -206,14 +164,14 @@ class ProbClassifier(nn.Module):
         """
         nof_conv_layers_classifier = 4  # 4 convd3d layers
         context_size = nof_conv_layers_classifier * (self.receptive_field - 1) + 1
-        
+
         pad = context_size // 2  # 4
 
         # padding_left , padding_right , padding_top , padding_bottom , padding_front , padding_back
 
-        pad_N = (0,0)
+        pad_N = (0, 0)
         pad_C = (pad, 0)
-        pad_HW =(pad,pad)
+        pad_HW = (pad, pad)
 
         pads = pad_HW + pad_HW + pad_C + pad_N
         # import ipdb; ipdb.set_trace()
