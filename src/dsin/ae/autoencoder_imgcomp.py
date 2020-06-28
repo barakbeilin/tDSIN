@@ -1,16 +1,14 @@
 # originally generated from : dev_nb/nb__autoencoder_imgcomp.ipynb
 import torch
 from torch import nn
-import torch.nn.functional as F
 from typing import Dict, List
-import enum
 from enum import Enum
 
 
 class ChangeState(Enum):
-    NORMALIZE = (enum.auto(),)
-    DENORMALIZE = (enum.auto(),)
-    OFF = enum.auto()
+    NORMALIZE = 0
+    DENORMALIZE = 1
+    OFF = 2
 
 
 class ChangeImageStatsToKitti(nn.Module):
@@ -30,8 +28,8 @@ class ChangeImageStatsToKitti(nn.Module):
             return self._denormalize(x)
         elif self.direction == ChangeState.OFF:
             return x
-        else:
-            raise ValueError(f"Invalid stats change direction {self.direction}")
+
+        raise ValueError(f"Invalid stats change direction {self.direction}")
 
     def _normalize(self, x):
 
@@ -39,7 +37,7 @@ class ChangeImageStatsToKitti(nn.Module):
 
     def _denormalize(self, x):
 
-        return (x * torch.sqrt(self.var + self.SIGMA_MIN5)) + self.mean
+        return (x * torch.sqrt(self.var + self.SIGMA_MIN)) + self.mean
 
     @staticmethod
     def _get_stats():
@@ -72,56 +70,63 @@ class ChangeImageStatsToKitti(nn.Module):
 class Enc_Cs:
     """Consts for encoder"""
 
-    in_channels_to_conv2d_1 = 3
-    n = 128
-    quantizer_num_of_centers = 32
-    use_heat_map = True
+    def __init__(self):
 
-    basic_conv2d = {"padding_mode": "replicate"}
-    modifiable_conv2d = {"conv": nn.Conv2d, **basic_conv2d}
-    padding_stride2_kernel5 = {
-        "kernel_size": [5, 5],
-        "stride": [2, 2],
-        "padding": [2, 2],
-    }
-    padding_stride1_kernel3 = {
-        "kernel_size": [3, 3],
-        "stride": [1, 1],
-        "padding": [1, 1],
-    }
+        self.in_channels_to_conv2d_1 = 3
+        self.n = 128
+        self.quantizer_num_of_centers = 32
+        self.use_heat_map = True
 
-    enc_conv2d_1 = {
-        "in_channels": in_channels_to_conv2d_1,
-        "out_channels": n // 2,
-        **padding_stride2_kernel5,
-        **modifiable_conv2d,
-    }
-    enc_conv2d_2 = {
-        "in_channels": n // 2,
-        "out_channels": n,
-        **padding_stride2_kernel5,
-        **modifiable_conv2d,
-    }
+        self.basic_conv2d = {"padding_mode": "replicate"}
+        self.modifiable_conv2d = {"conv": nn.Conv2d, **self.basic_conv2d}
+        self.padding_stride2_kernel5 = {
+            "kernel_size": [5, 5],
+            "stride": [2, 2],
+            "padding": [2, 2],
+        }
+        self.padding_stride1_kernel3 = {
+            "kernel_size": [3, 3],
+            "stride": [1, 1],
+            "padding": [1, 1],
+        }
 
-    enc_resblock = {
-        "in_channels": n,
-        "out_channels": n,
-        **padding_stride1_kernel3,
-        **modifiable_conv2d,
-    }
+        self.enc_conv2d_1 = {
+            "in_channels": self.in_channels_to_conv2d_1,
+            "out_channels": self.n // 2,
+            **self.padding_stride2_kernel5,
+            **self.modifiable_conv2d,
+        }
+        self.enc_conv2d_2 = {
+            "in_channels": self.n // 2,
+            "out_channels": self.n,
+            **self.padding_stride2_kernel5,
+            **self.modifiable_conv2d,
+        }
 
-    enc_uber_resblock = {"num_of_resblocks": 3, "resblock": enc_resblock}
-    enc_uber_resblocks = {"num_of_uberresblocks": 5, "uberresblock": enc_uber_resblock}
+        self.enc_resblock = {
+            "in_channels": self.n,
+            "out_channels": self.n,
+            **self.padding_stride1_kernel3,
+            **self.modifiable_conv2d,
+        }
 
-    last_conv2d_out = (
-        quantizer_num_of_centers + 1 if use_heat_map else quantizer_num_of_centers
-    )
-    last_conv2d = {
-        "in_channels": n,
-        "out_channels": last_conv2d_out,
-        **padding_stride2_kernel5,
-        **basic_conv2d,
-    }
+        self.enc_uber_resblock = {"num_of_resblocks": 3, "resblock": self.enc_resblock}
+        self.enc_uber_resblocks = {
+            "num_of_uberresblocks": 5,
+            "uberresblock": self.enc_uber_resblock,
+        }
+
+        self.last_conv2d_out = (
+            self.quantizer_num_of_centers + 1
+            if self.use_heat_map
+            else self.quantizer_num_of_centers
+        )
+        self.last_conv2d = {
+            "in_channels": self.n,
+            "out_channels": self.last_conv2d_out,
+            **self.padding_stride2_kernel5,
+            **self.basic_conv2d,
+        }
 
 
 class Dec_Cs(Enc_Cs):
@@ -186,39 +191,40 @@ class Encoder(nn.Module):
         last_conv2d: Dict,
     ):
         super().__init__()
-        layers = [ChangeImageStatsToKitti(direction=ChangeState.NORMALIZE)]
-
+        pre_res_layers = [ChangeImageStatsToKitti(direction=ChangeState.NORMALIZE)]
         # first conv layers
-        layers.extend([Conv2dReluBatch2d(**conv2d_1), Conv2dReluBatch2d(**conv2d_2)])
+        pre_res_layers.extend(
+            [Conv2dReluBatch2d(**conv2d_1), Conv2dReluBatch2d(**conv2d_2)]
+        )
 
         # 5 uber blocks
+        res_layers = []
         for i in range(uberresblocks["num_of_uberresblocks"]):
-            layers.append(UberResBlock(**uberresblocks["uberresblock"]))
+            res_layers.append(UberResBlock(**uberresblocks["uberresblock"]))
 
         # resblock after the last uber-block
-        layers.append(ResBlock(**prelast_resblock))
-        self.pre_sum_model = nn.Sequential(*layers)
+        res_layers.append(ResBlock(**prelast_resblock))
 
+        self.pre_res_model = nn.Sequential(*pre_res_layers)
+        self.res_model = nn.Sequential(*res_layers)
         self.post_sum_model = nn.Conv2d(**last_conv2d)
 
     @classmethod
     def create_module_from_const(cls):
+        enc_c = Enc_Cs()
         return cls(
-            Enc_Cs.enc_conv2d_1,
-            Enc_Cs.enc_conv2d_2,
-            Enc_Cs.enc_uber_resblocks,
-            Enc_Cs.enc_uber_resblocks["uberresblock"]["resblock"],
-            Enc_Cs.last_conv2d,
+            enc_c.enc_conv2d_1,
+            enc_c.enc_conv2d_2,
+            enc_c.enc_uber_resblocks,
+            enc_c.enc_uber_resblocks["uberresblock"]["resblock"],
+            enc_c.last_conv2d,
         )
 
     def forward(self, x):
-        
-        xx = self.pre_sum_model(x)
 
-        print(x.shape)
-        print(xx.shape)
-        res_pre_conv =xx +x
-        return self.post_sum_model(res_pre_conv)
+        x_pre_res = self.pre_res_model(x)
+        x_post_res = self.res_model(x_pre_res) + x_pre_res
+        return self.post_sum_model(x_post_res)
 
 
 class UberResBlock(nn.Module):
