@@ -140,6 +140,7 @@ class Dec_Cs(Enc_Cs):
             "kernel_size": [3, 3],
             "stride": [2, 2],
             "padding": [1, 1],
+            "output_padding": [1, 1],
         }
         self.conv2d_1 = {
             "in_channels": self.quantizer_num_of_centers,
@@ -151,9 +152,11 @@ class Dec_Cs(Enc_Cs):
         self.dec_resblock = {
             "in_channels": self.n,
             "out_channels": self.n,
+            "conv": nn.Conv2d,
+            "padding_mode": "replicate",
             **self.padding_stride1_kernel3,
-            **super().modifiable_conv2d,
         }
+
         self.dec_uber_resblock = {"num_of_resblocks": 3, "resblock": self.dec_resblock}
         self.dec_uber_resblocks = {
             "num_of_uberresblocks": 5,
@@ -164,6 +167,7 @@ class Dec_Cs(Enc_Cs):
             "in_channels": self.n,
             "out_channels": self.n // 2,
             **self.padding_stride2_kernel5,
+            "output_padding": [1, 1],
             **self.modifiable_conv2d,
         }
 
@@ -171,6 +175,7 @@ class Dec_Cs(Enc_Cs):
             "in_channels": self.n // 2,
             "out_channels": 3,
             **self.padding_stride2_kernel5,
+            "output_padding": [1, 1],
             **self.basic_conv2d,
         }
 
@@ -297,10 +302,10 @@ class Conv2dReluBatch2d(nn.Module):
         padding_mode: str,
         padding,
         conv,
+        output_padding: List = None,
     ):
         super().__init__()
-
-        self.model = nn.Sequential(
+        convlution_layer = (
             conv(
                 in_channels=in_channels,
                 out_channels=out_channels,
@@ -308,7 +313,20 @@ class Conv2dReluBatch2d(nn.Module):
                 stride=stride,
                 padding_mode=padding_mode,
                 padding=padding,
-            ),
+            )
+            if output_padding is None
+            else conv(
+                in_channels=in_channels,
+                out_channels=out_channels,
+                kernel_size=kernel_size,
+                stride=stride,
+                padding_mode=padding_mode,
+                padding=padding,
+                output_padding=output_padding,
+            )
+        )
+        self.model = nn.Sequential(
+            convlution_layer,
             nn.ReLU(),
             nn.BatchNorm2d(
                 out_channels,
@@ -339,12 +357,12 @@ class Decoder(nn.Module):
         last_conv2d: Dict,
     ):
         super().__init__()
-        layers = []
 
         # first deconv layers
         self.pre_uberblock_model = Conv2dReluBatch2d(**conv2d_1)
 
         # 5 uber blocks
+        layers = []
         for i in range(uberresblocks["num_of_uberresblocks"]):
             layers.append(UberResBlock(**uberresblocks["uberresblock"]))
         # resblock after the last uber-block
