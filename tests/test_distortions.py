@@ -40,6 +40,17 @@ class TestDistortions(unittest.TestCase):
             torch.allclose(d2.get_distortion(DistTypes.MS_SSMIM), torch.tensor(60.2528))
         )
 
+    def test_on_raise(self):
+        x = torch.ones([2, 3, 10, 10], dtype=torch.float32)
+        y = x + 1
+
+        d = Distortions(x, y, DistTypes.MAE, is_training=True)
+        try:
+            res = d.get_distortion(DistTypes.MS_SSMIM)
+            self.fail()
+        except ValueError:
+            pass
+
 
 if __name__ == "__main__":
     unittest.main()
