@@ -40,7 +40,6 @@ class MaskedConv3d(nn.Module):
             # import ipdb; ipdb.set_trace()
             self.conv.weight = nn.Parameter(self.conv.weight * self.filter_mask)
 
-
     @staticmethod
     def create_mask(filter_shape: Tuple, zero_center_pixel: bool):
         """create 5d mask that includes all pixel's in strictly before
@@ -125,7 +124,7 @@ class ProbClassifier(nn.Module):
         self, classifier_in_3d_channels, classifier_out_3d_channels, receptive_field=3
     ):
         super().__init__()
-        
+
         self.receptive_field = receptive_field
         K = receptive_field
         self.filter_shape = (K // 2 + 1, K, K)  # CHW
@@ -154,9 +153,9 @@ class ProbClassifier(nn.Module):
         assert len(x.shape) == 4  # NCHW
         padded_x = self.premodel(x)
         padded_x.unsqueeze_(1)  # NTCHW T->channel dim of the 3dconv
-        
+
         assert padded_x.shape[1] == 1  # T = 1
-        
+
         return self.model(padded_x)
 
     def zero_pad_layer(self):
@@ -177,3 +176,4 @@ class ProbClassifier(nn.Module):
         pads = pad_HW + pad_HW + pad_C + pad_N
         # import ipdb; ipdb.set_trace()
         return nn.ConstantPad3d(pads, value=0)
+
