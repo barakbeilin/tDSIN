@@ -7,9 +7,9 @@ class TestImportanceMap(unittest.TestCase):
         self.importance_map_layer = ImportanceMapMult(use_map=True)
 
     def test_channel_dim_shrinks_by1(self):
-        x = torch.randn([2, 3, 100, 100])
+        x = torch.randn([3, 3, 100, 100])
         y = self.importance_map_layer(x)
-        self.assertEqual(tuple(y.shape), (2, 2, 100, 100))
+        self.assertEqual(tuple(y.shape), (3, 2, 100, 100))
 
     def test_output_makes_sense(self):
         x = torch.tensor(
