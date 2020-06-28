@@ -38,7 +38,8 @@ class MaskedConv3d(nn.Module):
             # print((self.conv.weight.shape))
             # print((self.filter_mask.shape))
             # import ipdb; ipdb.set_trace()
-            self.conv.weight.data = self.conv.weight.data * self.filter_mask
+            self.conv.weight = nn.Parameter(self.conv.weight * self.filter_mask)
+
 
     @staticmethod
     def create_mask(filter_shape: Tuple, zero_center_pixel: bool):
