@@ -19,7 +19,9 @@ class ChangeImageStatsToKitti(nn.Module):
         self.direction = direction
 
         mean, var = self._get_stats()
-        self.mean, self.var = nn.Parameter(mean), nn.Parameter(var)
+
+        self.register_buffer("mean", mean)
+        self.register_buffer("var", var)
 
     def forward(self, x):
         if self.direction == ChangeState.NORMALIZE:
@@ -44,26 +46,22 @@ class ChangeImageStatsToKitti(nn.Module):
         """Get mean and variance values of KITTI dataset."""
         # make mean, var into (3, 1, 1) so that they broadcast with NCHW
         mean = (
-            torch.nn.Parameter(
-                torch.tensor(
-                    [93.70454143384742, 98.28243432206516, 94.84678088809876],
-                    dtype=torch.float32,
-                ),
-                requires_grad=False,
+            torch.tensor(
+                [93.70454143384742, 98.28243432206516, 94.84678088809876],
+                dtype=torch.float32,
             )
             .unsqueeze(-1)
             .unsqueeze(-1)
         )
+
         var = (
-            torch.nn.Parameter(
-                torch.tensor(
-                    [5411.79935676, 5758.60456747, 5890.31451232], dtype=torch.float32
-                ),
-                requires_grad=False,
+            torch.tensor(
+                [5411.79935676, 5758.60456747, 5890.31451232], dtype=torch.float32
             )
             .unsqueeze(-1)
             .unsqueeze(-1)
         )
+        
         return mean, var
 
 

@@ -17,7 +17,7 @@ class MaskedConv3d(nn.Module):
         """
         super().__init__()
         self.kernel_size = tuple(filter_mask.shape)[2:]  # NDCHW -> CHW
-        self.filter_mask = nn.Parameter(filter_mask)
+        self.register_buffer("filter_mask", filter_mask)
         self.conv = nn.Conv3d(
             in_channels=in_channels,
             out_channels=out_channels,

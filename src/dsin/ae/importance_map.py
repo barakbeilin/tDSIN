@@ -38,9 +38,14 @@ class ImportanceMapMult(nn.Module):
     #    # print(x)
     #    print(y.shape)
 
-    def __init__(self, use_map=True):
+    def __init__(self, use_map, info_channels):
         super().__init__()
         self.use_map = use_map
+        self.info_channels = info_channels
+
+        cl_param = torch.arange(start=0, end=self.info_channels, dtype=torch.float32)
+        cl_param = torch.reshape(cl_param, (self.info_channels, 1, 1))
+        self.register_buffer("cl_param", cl_param)
 
     def forward(self, x):
         """
@@ -56,24 +61,20 @@ class ImportanceMapMult(nn.Module):
         # assume NCHW so channel dim number is 1
         CHANNEL_DIM = 1
         INFO_CHANNELS = x.shape[CHANNEL_DIM] - 1  # substract importance map
-
-        cl_param = nn.Parameter(
-            torch.arange(
-                start=0, end=INFO_CHANNELS, dtype=torch.float32, requires_grad=False
-            )
-        )
-
-        cl_param = torch.reshape(cl_param, (INFO_CHANNELS, 1, 1))
+        print(x.shape)
+        print(INFO_CHANNELS)
+        print(self.info_channels)
+        assert INFO_CHANNELS == self.info_channels
 
         # choose the first channel as the importance map
         importance_map = x[:, MAP_CHANNEL, ...]  # NHW
         importance_map = torch.sigmoid(importance_map) * INFO_CHANNELS
-        
+
         importance_map.unsqueeze_(CHANNEL_DIM)  # N1HW
 
         z = x[:, MAP_CHANNEL + 1 :, ...]
 
-        diff = importance_map - cl_param
+        diff = importance_map - self.cl_param
 
         out_map = MinMaxMap.apply(diff)
 
