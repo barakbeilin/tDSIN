@@ -4,7 +4,7 @@ from enum import Enum
 from pytorch_msssim import ms_ssim
 from dsin.ae import config
 
-
+"""https://discuss.pytorch.org/t/use-model-parameters-in-loss-function/17305"""
 class DistTypes(Enum):
     MAE = 0
     MSE = 1
