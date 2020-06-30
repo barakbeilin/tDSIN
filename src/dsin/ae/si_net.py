@@ -1,10 +1,13 @@
 import torch
 from torch import nn
 from dsin.ae import config
-
+from enum import Enum
+class SiNetChannelIn(Enum):
+    WithSideInformation = 6
+    NoSideInformation = 3
 
 class SiNet(nn.Module):
-    def __init__(self):
+    def __init__(self, in_channels: SiNetChannelIn):
         super().__init__()
         NOF_INTERNAL_LAYERS = 7
         NEG_SLOPE = 0.2
@@ -27,7 +30,7 @@ class SiNet(nn.Module):
         internal_layers = sum(internal_layers, ())
         layers = [
             nn.Conv2d(
-                in_channels=3,
+                in_channels=in_channels.value,
                 out_channels=32,
                 kernel_size=[3, 3],
                 padding_mode="replicate",

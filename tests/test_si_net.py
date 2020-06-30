@@ -5,13 +5,17 @@ from tests import consts
 
 class TestSiNet(unittest.TestCase):
     def setUp(self):
-        self.net = SiNet()
+        self.net = SiNet(SiNetChannelIn.WithSideInformation)
 
-    def test_enc_struct(self):
+    
+    def test_net_struct(self):
+        self.assertEqual(consts.si_net_txt, repr(self.net))
+
+        self.net_with_no_si = SiNet(SiNetChannelIn.NoSideInformation)
         self.assertEqual(consts.si_net_txt, repr(self.net))
 
     def test_sinet_flow(self):
-        x = torch.randn([2, 3, 256, 256])
+        x = torch.randn([2, 6, 256, 256])
         y = self.net(x)
         self.assertEqual(tuple(y.shape), (2, 3, 256, 256))
 
