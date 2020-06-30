@@ -7,7 +7,6 @@ class TestSiNet(unittest.TestCase):
     def setUp(self):
         self.net = SiNet(SiNetChannelIn.WithSideInformation)
 
-    
     def test_net_struct(self):
         self.assertEqual(consts.si_net_txt, repr(self.net))
 
@@ -29,8 +28,9 @@ class TestSiNet(unittest.TestCase):
                 # fan_in = CHANNEL_IN * KERNEL_SIZE = CHANNEL_IN * KER_H * KER_L
                 fan_in = param.shape[1] * (param.shape[2] * param.shape[3])
                 kaiming_uniform_bound = lreul_gain * torch.sqrt(
-                    torch.tensor(3.0) / fan_in)
-                
+                    torch.tensor(3.0) / fan_in
+                )
+
                 calc_variance = (2 * kaiming_uniform_bound) ** 2 / 12
                 self.assertAlmostEqual(torch.mean(param), 0.0, delta=0.1)
                 print(i)

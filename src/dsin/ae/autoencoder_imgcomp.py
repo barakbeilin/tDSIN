@@ -73,7 +73,7 @@ class Enc_Cs:
 
         self.in_channels_to_conv2d_1 = 3
         self.n = 128
-        self.quantizer_num_of_centers = config.quantizer_num_of_centers
+        self.quantizer_num_of_channels = config.quantizer_num_of_channels
         self.use_heat_map = True
 
         self.basic_conv2d = {"padding_mode": "replicate"}
@@ -116,9 +116,9 @@ class Enc_Cs:
         }
 
         self.last_conv2d_out = (
-            self.quantizer_num_of_centers + 1
+            self.quantizer_num_of_channels + 1
             if self.use_heat_map
-            else self.quantizer_num_of_centers
+            else self.quantizer_num_of_channels
         )
         self.last_conv2d = {
             "in_channels": self.n,
@@ -142,7 +142,7 @@ class Dec_Cs(Enc_Cs):
             "output_padding": [1, 1],
         }
         self.conv2d_1 = {
-            "in_channels": self.quantizer_num_of_centers,
+            "in_channels": self.quantizer_num_of_channels,
             "out_channels": self.n,
             **self.padding_stride2_kernel3,
             **self.modifiable_conv2d,

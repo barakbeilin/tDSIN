@@ -3,9 +3,6 @@ from dsin.ae.importance_map import *
 
 
 class TestImportanceMap(unittest.TestCase):
-    
-        
-
     def test_channel_dim_shrinks_by1(self):
         self.info_channels = 2
         self.importance_map_layer = ImportanceMapMult(

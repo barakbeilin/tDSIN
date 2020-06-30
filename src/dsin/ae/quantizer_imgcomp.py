@@ -17,15 +17,6 @@ class ChannelOrder(Enum):
 
 
 class Quantizer(nn.Module):
-    # >>> test quantizer
-    #     a = Quantizer(5,(0,10),0.1,0.1);
-    #     x = torch.round(torch.rand([3,2,2,2])*10);
-    #     print(x)
-    #     print(a.centers)
-    #     x_soft, x_hard, x_index_of_center =  a(x)
-    #     print(symbols_hard)
-    #     print(x_soft)
-
     def __init__(
         self, num_centers, centers_initial_range, centers_regularization_factor, sigma
     ):
