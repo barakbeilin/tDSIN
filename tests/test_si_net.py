@@ -37,6 +37,52 @@ class TestSiNet(unittest.TestCase):
                 i += 1
                 self.assertAlmostEqual(torch.var(param), calc_variance, delta=0.05)
 
+    def test_init_weight_to_eye(self):
+        net = SiNet(SiNetChannelIn.WithSideInformation, use_eye_init=True)
+
+        flag_check_once = False
+        for param in net.parameters():
+            if tuple(param.shape) == (32, 32, 3, 3):
+
+                flag_check_once = True
+
+                self.assertTrue(
+                    torch.all(
+                        torch.eq(
+                            param[0, 0, :, :],
+                            torch.tensor(
+                                [
+                                    [
+                                        [
+                                            [1.0, 0.0, 0.0],
+                                            [0.0, 1.0, 0.0],
+                                            [0.0, 0.0, 1.0],
+                                        ],
+                                        [
+                                            [1.0, 0.0, 0.0],
+                                            [0.0, 1.0, 0.0],
+                                            [0.0, 0.0, 1.0],
+                                        ],
+                                    ],
+                                    [
+                                        [
+                                            [1.0, 0.0, 0.0],
+                                            [0.0, 1.0, 0.0],
+                                            [0.0, 0.0, 1.0],
+                                        ],
+                                        [
+                                            [1.0, 0.0, 0.0],
+                                            [0.0, 1.0, 0.0],
+                                            [0.0, 0.0, 1.0],
+                                        ],
+                                    ],
+                                ]
+                            ),
+                        )
+                    )
+                )
+        self.assertTrue(flag_check_once)
+
 
 if __name__ == "__main__":
     unittest.main()

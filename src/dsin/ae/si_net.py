@@ -2,12 +2,15 @@ import torch
 from torch import nn
 from dsin.ae import config
 from enum import Enum
+
+
 class SiNetChannelIn(Enum):
     WithSideInformation = 6
     NoSideInformation = 3
 
+
 class SiNet(nn.Module):
-    def __init__(self, in_channels: SiNetChannelIn):
+    def __init__(self, in_channels: SiNetChannelIn, use_eye_init: bool = False):
         super().__init__()
         NOF_INTERNAL_LAYERS = 7
         NEG_SLOPE = 0.2
@@ -40,16 +43,26 @@ class SiNet(nn.Module):
             *internal_layers,
             nn.Conv2d(in_channels=32, out_channels=3, kernel_size=[1, 1],),
         ]
+        if use_eye_init:
+            for layer in layers:
+                if type(layer) is nn.Conv2d:
+                    with torch.no_grad():
+                        w = torch.eye(
+                            n=layer.kernel_size[0], dtype=torch.float32
+                        ).repeat(layer.weight.shape[0], layer.weight.shape[1], 1, 1)
+                      
+                        layer.weight = nn.Parameter(w)
 
-        for layer in layers:
-            try:
-                weight = getattr(layer, "weight")
-                # swapped former to kaiming uniform
-                nn.init.kaiming_uniform_(
-                    weight, a=NEG_SLOPE, mode="fan_in", nonlinearity="leaky_relu"
-                )
-            except AttributeError:
-                pass
+        else:
+            # kaiming uniform init
+            for layer in layers:
+                try:
+                    weight = getattr(layer, "weight")
+                    nn.init.kaiming_uniform_(
+                        weight, a=NEG_SLOPE, mode="fan_in", nonlinearity="leaky_relu"
+                    )
+                except AttributeError:
+                    pass
 
         self.model = nn.Sequential(*layers)
 
