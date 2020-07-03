@@ -75,13 +75,13 @@ class Quantizer(nn.Module):
         if dataformat == ChannelOrder.NHWC:
             x = self.__permute_NHWC_to_NCHW(x)
 
-        x_soft, x_hard, symbols_hard = self._quantize(x)
+        x_soft, x_hard, x_index_of_closest_center = self._quantize(x)
 
         # return tensors in the original channel order
         if dataformat == ChannelOrder.NHWC:
-            return tuple(map(self.permute_NCHW_to_NHWC, (x_soft, x_hard, symbols_hard)))
+            return tuple(map(self.permute_NCHW_to_NHWC, (x_soft, x_hard, x_index_of_closest_center)))
         else:
-            return x_soft, x_hard, symbols_hard
+            return x_soft, x_hard, x_index_of_closest_center
 
     def _quantize(self, x):
 
