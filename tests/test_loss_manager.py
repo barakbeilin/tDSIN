@@ -112,8 +112,7 @@ class TestLossMan(unittest.TestCase):
             target_bit_cost,
         )
         print(bit_cost)
-        self.assertTrue(torch.allclose(bit_cost,torch.tensor(1.2073),atol=0.001))
-        
+        self.assertTrue(torch.allclose(bit_cost, torch.tensor(1.2073), atol=0.001))
 
     def testget_bit_cost_loss_0clamp_correct(self):
         # NCHW = 1,2,3,1
@@ -139,8 +138,8 @@ class TestLossMan(unittest.TestCase):
             target_bit_cost,
         )
         print(bit_cost)
-        self.assertTrue(torch.allclose(bit_cost,torch.tensor(0.0),atol=0.001))
-        
+        self.assertTrue(torch.allclose(bit_cost, torch.tensor(0.0), atol=0.001))
+
 
 if __name__ == "__main__":
     unittest.main()
