@@ -18,14 +18,19 @@ class ChannelOrder(Enum):
 
 class Quantizer(nn.Module):
     def __init__(
-        self, num_centers, centers_initial_range, centers_regularization_factor, sigma
+        self,
+        num_centers: int,
+        centers_initial_range,
+        centers_regularization_factor: float,
+        sigma: float,
+        init_centers_uniformly: bool = False,
     ):
         super().__init__()
         self.num_centers = (num_centers,)
         self.centers_initial_range = centers_initial_range
         self.sigma = sigma
         self.reg = torch.as_tensor(centers_regularization_factor, dtype=torch.float32)
-
+        self.init_centers_uniformly = init_centers_uniformly
         self._create_centers_variable()
 
     def _create_centers_variable(self, dtype=torch.float32):  # (C, L) or (L,)
@@ -33,10 +38,18 @@ class Quantizer(nn.Module):
         minval, maxval = map(int, self.centers_initial_range)
         # create a tensor of size with values drawn
         # from uniform distribution
-        centers = (
-            torch.rand(*self.num_centers, dtype=dtype) * (maxval - minval) + minval
-        )
-        centers, _ = torch.sort(centers)
+        if self.init_centers_uniformly:
+            centers = torch.linspace(
+                start=self.centers_initial_range[0],
+                end=self.centers_initial_range[1],
+                steps=self.num_centers[0],
+                dtype=dtype,
+            )
+        else:
+            centers = (
+                torch.rand(*self.num_centers, dtype=dtype) * (maxval - minval) + minval
+            )
+            centers, _ = torch.sort(centers)
         # Wrapping with nn.Parameter ensures it is copied to gpu when .to('cuda') is called
         self.centers = nn.Parameter(centers)
 
@@ -96,7 +109,7 @@ class Quantizer(nn.Module):
         # NCHW
         x_index_of_center = symbols_hard.view(N, C, H, W)
         # NCHW, contains value of symbol to use
-        x_hard = self.centers[symbols_hard]
+        x_hard = self.centers[x_index_of_center]
 
         x_soft.data = x_hard  # assign data, keep gradient
         return x_soft, x_hard, x_index_of_center
