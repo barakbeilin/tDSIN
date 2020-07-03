@@ -9,8 +9,18 @@ class TestImportanceMap(unittest.TestCase):
             use_map=True, info_channels=self.info_channels
         )
         x = torch.randn([3, self.info_channels + 1, 100, 100])
-        y = self.importance_map_layer(x)
+        _, y = self.importance_map_layer(x)
         self.assertEqual(tuple(y.shape), (3, self.info_channels, 100, 100))
+
+    def test_dim_of_returned_importance_map(self):
+        self.info_channels = 1
+        self.importance_map_layer = ImportanceMapMult(
+            use_map=True, info_channels=self.info_channels
+        )
+        x = torch.randn([3, self.info_channels + 1, 100, 100])
+        improtnace_map_mult_weights, y = self.importance_map_layer(x)
+        self.assertEqual(
+            tuple(improtnace_map_mult_weights.shape), (3, 1, 100, 100))
 
     def test_output_makes_sense(self):
         self.info_channels = 1
@@ -33,7 +43,7 @@ class TestImportanceMap(unittest.TestCase):
             requires_grad=False,
         )
 
-        y = self.importance_map_layer(x)
+        _, y = self.importance_map_layer(x)
         print(y)
         y_ = torch.tensor(
             [[[-0.3466, -0.3466, -0.3466]], [[3.8103, 3.8103, 3.8103]]],

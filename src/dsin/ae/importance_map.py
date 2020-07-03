@@ -78,4 +78,4 @@ class ImportanceMapMult(nn.Module):
 
         out_map = MinMaxMap.apply(diff)
 
-        return torch.mul(out_map, z)
+        return out_map, torch.mul(out_map, z)
