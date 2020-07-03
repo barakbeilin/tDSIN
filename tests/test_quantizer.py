@@ -14,7 +14,7 @@ class TestQuantizer(unittest.TestCase):
 
         x = torch.round(torch.rand([3, 2, 2, 2]) * 10)
 
-        x_soft, x_hard, x_index_of_center = a(x)
+        x_soft, x_hard, _ = a(x)
         self.assertTrue(torch.all(x_soft.data.eq(x_hard.data)))
 
     def test_non_rand_center_values(self):
@@ -43,16 +43,16 @@ class TestQuantizer(unittest.TestCase):
             .unsqueeze_(0)
             .unsqueeze_(0)
         )
-        x_soft, x_hard, x_index_of_center = a(x)
+        x_soft, x_hard, x_index_of_closest_center = a(x)
 
-        print(f"{(x_soft, x_hard, x_index_of_center)}")
+        print(f"{(x_soft, x_hard, x_index_of_closest_center)}")
 
         self.assertTrue(torch.all(x_soft.data.eq(torch.tensor([0.0, 5.0, 5.0, 10.0]))))
 
         self.assertTrue(torch.all(x_hard.data.eq(torch.tensor([0.0, 5.0, 5.0, 10.0]))))
 
         self.assertTrue(
-            torch.all(x_index_of_center.data.eq(torch.tensor([0, 1, 1, 2])))
+            torch.all(x_index_of_closest_center.data.eq(torch.tensor([0, 1, 1, 2])))
         )
 
 
