@@ -107,12 +107,12 @@ class Quantizer(nn.Module):
         # detach d to use values without affecting the gradients
         _, symbols_hard = torch.min(d.detach(), dim=-1)
         # NCHW
-        x_index_of_center = symbols_hard.view(N, C, H, W)
+        x_index_of_closest_center = symbols_hard.view(N, C, H, W)
         # NCHW, contains value of symbol to use
-        x_hard = self.centers[x_index_of_center]
+        x_hard = self.centers[x_index_of_closest_center]
 
         x_soft.data = x_hard  # assign data, keep gradient
-        return x_soft, x_hard, x_index_of_center
+        return x_soft, x_hard, x_index_of_closest_center
 
     @staticmethod
     def permute_NHWC_to_NCHW(t):
