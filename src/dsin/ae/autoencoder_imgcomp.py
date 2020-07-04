@@ -1,69 +1,8 @@
 # originally generated from : dev_nb/nb__autoencoder_imgcomp.ipynb
-import torch
 from torch import nn
 from typing import Dict, List
-from enum import Enum
 from dsin.ae import config
-
-
-class ChangeState(Enum):
-    NORMALIZE = 0
-    DENORMALIZE = 1
-    OFF = 2
-
-
-class ChangeImageStatsToKitti(nn.Module):
-    SIGMA_MIN = 1e-5
-
-    def __init__(self, direction: ChangeState):
-        super().__init__()
-        self.direction = direction
-
-        mean, var = self._get_stats()
-
-        self.register_buffer("mean", mean)
-        self.register_buffer("var", var)
-
-    def forward(self, x):
-        if self.direction == ChangeState.NORMALIZE:
-            return self._normalize(x)
-        elif self.direction == ChangeState.DENORMALIZE:
-            return self._denormalize(x)
-        elif self.direction == ChangeState.OFF:
-            return x
-
-        raise ValueError(f"Invalid stats change direction {self.direction}")
-
-    def _normalize(self, x):
-
-        return (x - self.mean) / torch.sqrt(self.var + self.SIGMA_MIN)
-
-    def _denormalize(self, x):
-
-        return (x * torch.sqrt(self.var + self.SIGMA_MIN)) + self.mean
-
-    @staticmethod
-    def _get_stats():
-        """Get mean and variance values of KITTI dataset."""
-        # make mean, var into (3, 1, 1) so that they broadcast with NCHW
-        mean = (
-            torch.tensor(
-                [93.70454143384742, 98.28243432206516, 94.84678088809876],
-                dtype=torch.float32,
-            )
-            .unsqueeze(-1)
-            .unsqueeze(-1)
-        )
-
-        var = (
-            torch.tensor(
-                [5411.79935676, 5758.60456747, 5890.31451232], dtype=torch.float32
-            )
-            .unsqueeze(-1)
-            .unsqueeze(-1)
-        )
-
-        return mean, var
+from dsin.ae.kitti_normalizer import ChangeImageStatsToKitti, ChangeState
 
 
 class Enc_Cs:
@@ -180,8 +119,6 @@ class Dec_Cs(Enc_Cs):
 
 
 class Encoder(nn.Module):
-    
-
     def __init__(
         self,
         conv2d_1: Dict,
