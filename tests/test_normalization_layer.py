@@ -32,7 +32,7 @@ class TestNormalization(unittest.TestCase):
                         93.70454143384742,
                         98.28243432206516,
                         94.84678088809876,
-                    ], # repeat twice the kitti mean stats
+                    ],  # repeat twice the kitti mean stats
                     dtype=torch.float32,
                 ),
                 atol=30,
@@ -51,7 +51,7 @@ class TestNormalization(unittest.TestCase):
                         5411.79935676,
                         5758.60456747,
                         5890.31451232,
-                    ], # repeat twice the kitti var stats
+                    ],  # repeat twice the kitti var stats
                     dtype=torch.float32,
                 ),
                 atol=0,
@@ -64,7 +64,7 @@ class TestNormalization(unittest.TestCase):
         self.assertTrue(
             torch.allclose(
                 torch.mean(normalized, dim=(0, 2, 3)),
-                torch.tensor([0, 0, 0, 0, 0 , 0], dtype=torch.float32,),
+                torch.tensor([0, 0, 0, 0, 0, 0], dtype=torch.float32,),
                 atol=0.3,
                 rtol=0,
             )
@@ -73,7 +73,7 @@ class TestNormalization(unittest.TestCase):
         self.assertTrue(
             torch.allclose(
                 torch.var(normalized, dim=(0, 2, 3)),
-                torch.tensor([1, 1, 1,1, 1, 1], dtype=torch.float32,),
+                torch.tensor([1, 1, 1, 1, 1, 1], dtype=torch.float32,),
                 atol=0.3,
                 rtol=0,
             )
