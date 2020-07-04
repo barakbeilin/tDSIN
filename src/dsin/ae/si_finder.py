@@ -19,7 +19,7 @@ class SiFinder(nn.Module):
             y_dec: 1CHW
         """
         pass
-    
+
     def _get_x_patches(self, x_dec: torch.Tensor):
         if (
             x_dec.shape[-1] % self.KERNEL_SIZE != 0
@@ -54,7 +54,7 @@ class SiFinder(nn.Module):
 
     def _get_patch_creator(self):
         # non overlaping patches of size KERNEL_SIZE*KERNEL_SIZE
-        return nn.Unfold(kernel_size=self.KERNEL_SIZE, stride=self.KERNEL_SIZE,)
+        return nn.Unfold(kernel_size=self.KERNEL_SIZE, stride=self.KERNEL_SIZE)
 
     @staticmethod
     def pearson_corr(x_patches: torch.tensor, y: torch.tensor):
