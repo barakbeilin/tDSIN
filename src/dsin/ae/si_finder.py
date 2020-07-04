@@ -18,21 +18,9 @@ class SiFinder(nn.Module):
             x_dec : 1CHW, x_dec to find best patches
             y_dec: 1CHW
         """
-
-        # iter through x_dec pathces to find the best match in y_dec
-        y_dec_path_indexs = []
-        for i in range(x_patches.size()[-1]):
-            corr_res = F.conv2d(y_dec, weight=x_patches, stride=24)
-            best_index = torch.argmax(corr_res)
-            # handle multiple max values
-            if len(best_index.shape):
-                y_dec_path_indexs.append(best_index.item())
-            else:
-                y_dec_path_indexs.append(best_index[0].item())
-
-        return y_dec_path_indexs
-
-    def _get_x_patches(self, x_dec: torch.Tensor, y_dec: torch.Tensor):
+        pass
+    
+    def _get_x_patches(self, x_dec: torch.Tensor):
         if (
             x_dec.shape[-1] % self.KERNEL_SIZE != 0
             or x_dec.shape[-2] % self.KERNEL_SIZE != 0
@@ -68,47 +56,61 @@ class SiFinder(nn.Module):
         # non overlaping patches of size KERNEL_SIZE*KERNEL_SIZE
         return nn.Unfold(kernel_size=self.KERNEL_SIZE, stride=self.KERNEL_SIZE,)
 
-    def pearson_corr(x_patches: torch.tensor, y_dec: torch.tensor):
+    @staticmethod
+    def pearson_corr(x_patches: torch.tensor, y: torch.tensor):
         """
         Calculate pearson_corr between patches of x_patches(PCKK) and y(1CHW).
 
         R =  numerator/ denominator.
         where:
         numerator = sum_i(xi*yi - y_mean*xi - x_mean*yi + x_mean*y_mean)
-                  = sum_i(xi*yi) - (2KK-1)x_mean*y_mean
+                  = sum_i(xi*yi) - (K^2)x_mean*y_mean
         denominator = sqrt( sum_i(xi^2 - 2xi*x_mean + x_mean^2)*sum_i(yi^2 - 2yi*y_mean + y_mean^2) )
-                    = sqrt( sum_i(xi^2) - (2KK-1)x_mean^2)*sqrt( sum_i(yi^2) - (2KK-1)y_mean^2)) )
+                    = sqrt( sum_i(xi^2) - (K^2)*x_mean^2)*sqrt( sum_i(yi^2) - (K^2)*y_mean^2)
         """
-        ################## x_mean, y_mean
+        ################## mean_x, sum_of_x_square
+        # mean over height and width, leaving result of dim -1P11
+        mean_x = (
+            torch.mean(x_patches, dim=(1, 2, 3))
+            .unsqueeze_(0)
+            .unsqueeze_(-1)
+            .unsqueeze_(-1)
+        )
 
-        ##################
-        ################## sum_i(xi*yi)
-        # 1P(H-K)(W-K)
-        xy = F.conv2d(y_dec, weight=x_patches)
-        ##################
-        ################## sum_i(xi^2) , sum_i(yi^2)
         x_square = x_patches ** 2
+        # dim - 1P11
+        sum_of_x_square = (
+            torch.sum(x_square, dim=(1, 2, 3))
+            .unsqueeze_(0)
+            .unsqueeze_(-1)
+            .unsqueeze_(-1)
+        )
+        ##################
+        ################## sum_y, sum_of_y_square
         y_square = y ** 2
-
-        # mean over height and width, leaving result of dim -P
-        mean_x_square = torch.mean(x_patches, dim=(1, 2, 3))
 
         # kernel of dims PCKK will lead to output 1P(H-K)(W-K) with y as input
         mean_kernel = torch.ones(
             (x_patches.shape[0], y.shape[1], x_patches.shape[2], x_patches.shape[3]),
             dtype=torch.float32,
         )
-        mean_y_square = F.conv2d(y_square, weight = mean_kernel))
+        # dim - 1P(H-K)(W-K)
+        sum_y = F.conv2d(y, weight=mean_kernel)
+        # dim - 1P(H-K)(W-K)
+        sum_of_y_square = F.conv2d(y_square, weight=mean_kernel)
         ##################
-        ################## x_mean*sum_i(xi) , y_mean*sum_i(yi)
-        x_mean_x = torch.nul(x_mean, sum_x)
-        y_mean_y = tf.multiply(y_mean, sum_y)
+        ################## sum_xy
+        # 1P(H-K)(W-K)
+        sum_xy = F.conv2d(y_dec, weight=x_patches)
+        ################## patch_size
+        patch_size = x_patches.shape[0]
+        ################## numerator
+        numerator = sum_xy - mean_x * sum_y
+        ##################
+        ################## denominator
+        denominator_x = torch.sqrt(sum_of_x_square - patch_size * mean_x * mean_x)
+        denominator_y = torch.sqrt(sum_of_y_square - sum_y * sum_y / spatch_size)
+        denominator = denominator_x * denominator_y
+        ##################
+        return numerator / denominator
 
-        # x_mean^2 , y_mean^2
-        x_mean_square = tf.square(x_mean)
-        y_mean_square = tf.square(y_mean)
-
-
-
-
- 
