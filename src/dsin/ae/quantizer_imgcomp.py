@@ -73,7 +73,7 @@ class Quantizer(nn.Module):
 
         # improve numerics by calculating using NCHW
         if dataformat == ChannelOrder.NHWC:
-            x = self.__permute_NHWC_to_NCHW(x)
+            x = self.permute_NHWC_to_NCHW(x)
 
         x_soft, x_hard, x_index_of_closest_center = self._quantize(x)
 
