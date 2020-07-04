@@ -76,6 +76,8 @@ class SiFinder(nn.Module):
             .unsqueeze_(-1)
             .unsqueeze_(-1)
         )
+        print(f"{mean_x=}")
+        print(f"{mean_x.shape=}")
 
         x_square = x_patches ** 2
         # dim - 1P11
@@ -85,32 +87,53 @@ class SiFinder(nn.Module):
             .unsqueeze_(-1)
             .unsqueeze_(-1)
         )
+        print(f"{sum_of_x_square=}")
+        print(f"{sum_of_x_square.shape=}")
         ##################
         ################## sum_y, sum_of_y_square
         y_square = y ** 2
 
-        # kernel of dims PCKK will lead to output 1P(H-K)(W-K) with y as input
+        # kernel of dims PCKK will lead to output 1P(H-K+1)(W-K+1) with y as input
         mean_kernel = torch.ones(
             (x_patches.shape[0], y.shape[1], x_patches.shape[2], x_patches.shape[3]),
             dtype=torch.float32,
         )
-        # dim - 1P(H-K)(W-K)
+        print(f"{mean_kernel.shape=}")
+        # dim - 1P(H-K+1)(W-K+1)
         sum_y = F.conv2d(y, weight=mean_kernel)
-        # dim - 1P(H-K)(W-K)
+        print(f"{sum_y=}")
+        print(f"{sum_y.shape=}")
+        # dim - 1P(H-K+1)(W-K+1)
         sum_of_y_square = F.conv2d(y_square, weight=mean_kernel)
+        print(f"{sum_of_y_square=}")
+        print(f"{sum_of_y_square.shape=}")
         ##################
         ################## sum_xy
-        # 1P(H-K)(W-K)
-        sum_xy = F.conv2d(y_dec, weight=x_patches)
+        # 1P(H-K+1)(W-K+1)
+        sum_xy = F.conv2d(y, weight=x_patches)
+        print(f"{sum_xy=}")
+        print(f"{sum_xy.shape=}")
         ################## patch_size
-        patch_size = x_patches.shape[0]
+        patch_size = x_patches.shape[-1] * x_patches.shape[-2]
+        print(f"{patch_size=}")
         ################## numerator
         numerator = sum_xy - mean_x * sum_y
+        print(f"{numerator=}")
+        print(f"{numerator.shape=}")
         ##################
         ################## denominator
         denominator_x = torch.sqrt(sum_of_x_square - patch_size * mean_x * mean_x)
-        denominator_y = torch.sqrt(sum_of_y_square - sum_y * sum_y / spatch_size)
+        print(f"{denominator_x=}")
+        print(f"{denominator_x.shape=}")
+        denominator_y = torch.sqrt(sum_of_y_square - sum_y * sum_y / patch_size)
+        print(f"{denominator_y=}")
+        print(f"{denominator_y.shape=}")
         denominator = denominator_x * denominator_y
+        print(f"{denominator=}")
+        print(f"{denominator.shape=}")
         ##################
+        print(f"{numerator / denominator=}")
+        
+        
         return numerator / denominator
 
