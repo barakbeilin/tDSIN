@@ -53,7 +53,7 @@ class TestLossMan(unittest.TestCase):
         # >>> print(f"{x=}")
         # >>> print(f"{loss(x,target_class)=}")
         # >>> print(f"{loss(x,target_class).shape=}")
-        self.assertTrue(tuple(self.lm.cross_entropy_loss_in_bits.data.shape), (1, 3, 1))
+        self.assertEqual(tuple(self.lm.cross_entropy_loss_in_bits.data.shape), (1, 3, 1))
 
     def test_masked_bit_entropy_is_correct(self):
         # NCHW = 1,2,3,1
@@ -86,7 +86,7 @@ class TestLossMan(unittest.TestCase):
                 atol=0.001,
             )
         )
-        self.assertTrue(tuple(self.lm.masked_bit_entropy.data.shape), (1, 3, 1))
+        self.assertEqual(tuple(self.lm.masked_bit_entropy.data.shape), (1, 3, 1))
 
     def testget_bit_cost_loss_correct(self):
         # NCHW = 1,2,3,1
