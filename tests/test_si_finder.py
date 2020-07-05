@@ -70,7 +70,7 @@ class TestSiFinder(unittest.TestCase):
 
         self.assertEqual(x.shape, (1, 3, 6, 6))
         y_dec_patch_indexs = sf._get_best_patch_index(x, y)
-        
+
         self.assertEqual(
             y_dec_patch_indexs,
             (
@@ -80,8 +80,6 @@ class TestSiFinder(unittest.TestCase):
                 (torch.tensor(3), torch.tensor(3)),
             ),
         )
-
-        
 
     @patch("dsin.ae.si_finder.SiFinder.KERNEL_SIZE", 8)
     def test_create_x_patches(self):
