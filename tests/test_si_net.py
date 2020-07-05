@@ -80,6 +80,7 @@ class TestSiNet(unittest.TestCase):
                         )
                     )
                 )
+        # verify checked at least once
         self.assertTrue(flag_check_once)
 
 
