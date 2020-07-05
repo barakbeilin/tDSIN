@@ -52,8 +52,17 @@ class SiFinder(nn.Module):
             aligned=False,
         )
 
-        return y_patches.permute(1,2,0,3).reshape(x_dec.shape)
+        # CKKP
+        y_patches = y_patches.permute(1, 2, 3, 0)
 
+        # 1|(C*K*K)|P , nn.Fold expect on input the same shape that nn.Unfold
+        # return.
+        y_patches = y_patches.view(
+            1, x_dec.shape[1] * self.KERNEL_SIZE * self.KERNEL_SIZE, y_patches.shape[-1]
+        )
+
+        sticher = self._get_patch_stiching(output_size=x_dec.shape[-2:])
+        return sticher(y_patches)
 
     def _get_best_patch_index(self, x_dec: torch.Tensor, y_dec: torch.Tensor):
         """
@@ -129,6 +138,18 @@ class SiFinder(nn.Module):
     def _get_patch_creator(self):
         # non overlaping patches of size KERNEL_SIZE*KERNEL_SIZE
         return nn.Unfold(kernel_size=self.KERNEL_SIZE, stride=self.KERNEL_SIZE)
+
+    def _get_patch_stiching(self, output_size: torch.Tensor):
+        """stich non overlaping patches of size KERNEL_SIZE*KERNEL_SIZE.
+        Parameters:
+            output_size -tensor, dim-(1,2). represeting the |H|W| of the output
+             from all stiched patches
+        """
+        return nn.Fold(
+            output_size=output_size,
+            kernel_size=self.KERNEL_SIZE,
+            stride=self.KERNEL_SIZE,
+        )
 
     @staticmethod
     def pearson_corr(x_patches: torch.tensor, y: torch.tensor):
