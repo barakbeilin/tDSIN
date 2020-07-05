@@ -8,7 +8,8 @@ class SiFinder(nn.Module):
     INPUT_CHANNELS = 3
 
     def create_y_syn(self, x_dec: torch.Tensor, y_dec: torch.Tensor, y: torch.Tensor):
-        pass
+        patch_offset_in_y_dec = self._get_best_patch_index(x_dec=x_dec, y_dec=y_dec)
+        
 
     def _get_best_patch_index(self, x_dec: torch.Tensor, y_dec: torch.Tensor):
         """
@@ -40,8 +41,7 @@ class SiFinder(nn.Module):
         best_patch_vector_index = torch.argmax(x_y_dec_corr[0, :, :], dim=-1)
 
         return tuple(
-            (v // corr_shape[-1], v % corr_shape[-1])
-            for v in best_patch_vector_index
+            (v // corr_shape[-1], v % corr_shape[-1]) for v in best_patch_vector_index
         )
 
     def _get_x_patches(self, x_dec: torch.Tensor):
