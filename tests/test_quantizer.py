@@ -45,8 +45,6 @@ class TestQuantizer(unittest.TestCase):
         )
         x_soft, x_hard, x_index_of_closest_center = a(x)
 
-        print(f"{(x_soft, x_hard, x_index_of_closest_center)}")
-
         self.assertTrue(torch.all(x_soft.data.eq(torch.tensor([0.0, 5.0, 5.0, 10.0]))))
 
         self.assertTrue(torch.all(x_hard.data.eq(torch.tensor([0.0, 5.0, 5.0, 10.0]))))

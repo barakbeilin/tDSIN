@@ -10,7 +10,7 @@ class TestImportanceMap(unittest.TestCase):
         )
         x = torch.randn([3, self.info_channels + 1, 100, 100])
         _, y = self.importance_map_layer(x)
-        self.assertEqual(tuple(y.shape), (3, 2, 100, 100)) # 2 is info_channels
+        self.assertEqual(tuple(y.shape), (3, 2, 100, 100))  # 2 is info_channels
 
     def test_dim_of_returned_importance_map(self):
         self.info_channels = 1
@@ -43,12 +43,11 @@ class TestImportanceMap(unittest.TestCase):
         )
 
         _, y = self.importance_map_layer(x)
-        print(y)
+
         y_ = torch.tensor(
             [[[-0.3466, -0.3466, -0.3466]], [[3.8103, 3.8103, 3.8103]]],
             dtype=torch.float32,
         )
-        print(y_)
 
         self.assertTrue(torch.allclose(y, y_, rtol=0.01))
 

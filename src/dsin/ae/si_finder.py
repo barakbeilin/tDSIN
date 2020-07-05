@@ -10,15 +10,32 @@ class SiFinder(nn.Module):
     def create_y_syn(self, x_dec: torch.Tensor, y_dec: torch.Tensor, y: torch.Tensor):
         pass
 
-    def _find_best_patch(
-        self, x_dec: torch.Tensor, y_dec: torch.Tensor, patch_creator: nn.Unfold
-    ):
+    def _find_best_patch_index(self, x_dec: torch.Tensor, y_dec: torch.Tensor):
         """
         Parameters:
             x_dec : 1CHW, x_dec to find best patches
             y_dec: 1CHW
         """
-        pass
+        # PCKK
+        x_patches = self._get_x_patches()
+
+        # 1P(H-K)(W-K)
+        # P - nof x patches
+        # K - x patch size
+        # H,W - original size of y_dec
+        x_y_dec_corr = self.pearson_corr(x_patches, y_dec)
+        corr_shape = x_y_dec_corr.shape
+
+        # reshape into 1P[(H-K)*(W-K)] to allow maximization over a single dim.
+        x_y_dec_corr = x_y_dec_corr.view(
+            corr_shape[0], corr_shape[1], corr_shape[2] * corr_shape[3]
+        )
+        best_patch_vector_index = torch.argmax(x_y_dec_corr, dim=-1)
+
+        return tuple(
+            (v // x_patches.shape[-1], v % x_patches.shape[-1])
+            for v in best_patch_vector_index
+        )
 
     def _get_x_patches(self, x_dec: torch.Tensor):
         if (
@@ -50,6 +67,7 @@ class SiFinder(nn.Module):
         # ends with P channels, the result of convolving y with each of patches
         # in x_patches
         x_patches = x_patches[0, :, :, :, :].permute(3, 0, 1, 2)
+        # return dim PCKK (out-channels | in-channels| kernel-h | kernel-w)
         return x_patches
 
     def _get_patch_creator(self):

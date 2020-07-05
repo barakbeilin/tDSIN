@@ -61,9 +61,7 @@ class ImportanceMapMult(nn.Module):
         # assume NCHW so channel dim number is 1
         CHANNEL_DIM = 1
         INFO_CHANNELS = x.shape[CHANNEL_DIM] - 1  # substract importance map
-        print(x.shape)
-        print(INFO_CHANNELS)
-        print(self.info_channels)
+
         assert INFO_CHANNELS == self.info_channels
 
         # choose the first channel as the importance map

@@ -33,7 +33,6 @@ class TestSiNet(unittest.TestCase):
 
                 calc_variance = (2 * kaiming_uniform_bound) ** 2 / 12
                 self.assertAlmostEqual(torch.mean(param), 0.0, delta=0.1)
-                print(i)
                 i += 1
                 self.assertAlmostEqual(torch.var(param), calc_variance, delta=0.05)
 

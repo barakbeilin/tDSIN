@@ -111,7 +111,7 @@ class TestLossMan(unittest.TestCase):
             beta_factor,
             target_bit_cost,
         )
-        print(bit_cost)
+
         self.assertTrue(torch.allclose(bit_cost, torch.tensor(1.2073), atol=0.001))
 
     def testget_bit_cost_loss_0clamp_correct(self):
@@ -137,7 +137,7 @@ class TestLossMan(unittest.TestCase):
             beta_factor,
             target_bit_cost,
         )
-        print(bit_cost)
+
         self.assertTrue(torch.allclose(bit_cost, torch.tensor(0.0), atol=0.001))
 
 
