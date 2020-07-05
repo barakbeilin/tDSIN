@@ -8,7 +8,6 @@ class TestSiFinder(unittest.TestCase):
     @patch("dsin.ae.si_finder.SiFinder.KERNEL_SIZE", 3)
     def test_best_patch_is_returned(self):
         pass
-    
 
     @patch("dsin.ae.si_finder.SiFinder.KERNEL_SIZE", 3)
     def test_best_patch_is_returned(self):

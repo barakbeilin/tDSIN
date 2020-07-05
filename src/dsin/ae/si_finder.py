@@ -1,6 +1,7 @@
 import torch
 from torch import nn
 from torch.nn import functional as F
+from torchvision.ops import roi_align
 
 
 class SiFinder(nn.Module):
@@ -8,8 +9,48 @@ class SiFinder(nn.Module):
     INPUT_CHANNELS = 3
 
     def create_y_syn(self, x_dec: torch.Tensor, y_dec: torch.Tensor, y: torch.Tensor):
-        patch_offset_in_y_dec = self._get_best_patch_index(x_dec=x_dec, y_dec=y_dec)
-        
+        """
+        create synthetic image from patches in y.
+        Let patch is places in index A inside y_syn,
+        the patch is taken from y at index B.
+        B is the offset of the patch in y_dec which has the maximum correlation
+        to a pathc in index A in x_dec.
+         
+        x_dec: tensor, 1CH`W`
+        y_dec: tensor, 1CHW
+        """
+        # tuple of P tuples of (row,col) patch offsets
+        patch_offsets_in_y_dec = self._get_best_patch_index(x_dec=x_dec, y_dec=y_dec)
+
+        patch_w = self.KERNEL_SIZE
+        patch_h = self.KERNEL_SIZE
+
+        # the 0 in the first dimension of boxes refers to the first image in the
+        # batch.
+        # the -0.5 offset is because roi_align refers to the center of the pixel
+        # hence requirign a shift of 0.5-pixel-length.
+        boxes = torch.tensor(
+            [
+                [
+                    0,
+                    -0.5 + offset_w,
+                    -0.5 + offset_h,
+                    -0.5 + offset_w + patch_w,
+                    -0.5 + offset_h + patch_h,
+                ]
+                for (offset_h, offset_w) in patch_offsets_in_y_dec
+            ]
+        )
+
+        # PCKK
+        y_patches = roi_align(
+            y,
+            boxes,
+            output_size=(patch_h, patch_w),
+            spatial_scale=1.0,
+            sampling_ratio=-1,
+            aligned=False,
+        )
 
     def _get_best_patch_index(self, x_dec: torch.Tensor, y_dec: torch.Tensor):
         """
