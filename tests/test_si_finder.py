@@ -5,8 +5,17 @@ from tests import consts
 
 
 class TestSiFinder(unittest.TestCase):
-    def setUp(self):
-        pass
+    @patch("dsin.ae.si_finder.SiFinder.KERNEL_SIZE", 3)
+    def test_best_patch_is_returned(self):
+        x = torch.tensor(
+            [
+                [[0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0]],
+                [[0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0]],
+                [[0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0]],
+            ]
+        ).unsqueeze_(0)
+        self.assertTrue(tuple(x.shape),(1,3,6,6))
+        self.fail()
 
     @patch("dsin.ae.si_finder.SiFinder.KERNEL_SIZE", 8)
     def test_create_x_patches(self):

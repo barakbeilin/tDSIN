@@ -12,6 +12,9 @@ class SiFinder(nn.Module):
 
     def _find_best_patch_index(self, x_dec: torch.Tensor, y_dec: torch.Tensor):
         """
+        Fsind the patch index in (row,col) fromat of y_dec patch with max
+        correlation for each patch in x_dec
+
         Parameters:
             x_dec : 1CHW, x_dec to find best patches
             y_dec: 1CHW
@@ -38,6 +41,7 @@ class SiFinder(nn.Module):
         )
 
     def _get_x_patches(self, x_dec: torch.Tensor):
+        """ Get nonoverlapping patches of size self.KERNEL_SIZE of x_dec."""
         if (
             x_dec.shape[-1] % self.KERNEL_SIZE != 0
             or x_dec.shape[-2] % self.KERNEL_SIZE != 0
