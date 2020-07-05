@@ -7,15 +7,81 @@ from tests import consts
 class TestSiFinder(unittest.TestCase):
     @patch("dsin.ae.si_finder.SiFinder.KERNEL_SIZE", 3)
     def test_best_patch_is_returned(self):
+        sf = SiFinder()
         x = torch.tensor(
             [
-                [[0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0]],
-                [[0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0]],
-                [[0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0]],
-            ]
+                [
+                    [1, 0, 0, 0, 0, 1],
+                    [0, 0, 0, 0, 0, 0],
+                    [0, 0, 1, 1, 0, 0],
+                    [0, 0, 0, 0, 1, 0],
+                    [1, 0, 1, 0, 0, 0],
+                    [0, 0, 0, 0, 1, 0],
+                ],
+                [
+                    [0, 0, 0, 0, 0, 0],
+                    [0, 0, 0, 0, 0, 0],
+                    [0, 0, 0, 0, 0, 0],
+                    [0, 0, 0, 0, 0, 0],
+                    [0, 0, 0, 0, 0, 0],
+                    [0, 0, 0, 0, 0, 0],
+                ],
+                [
+                    [0, 0, 0, 0, 0, 0],
+                    [0, 0, 0, 0, 0, 0],
+                    [0, 0, 0, 0, 0, 0],
+                    [0, 0, 0, 0, 0, 0],
+                    [0, 0, 0, 0, 0, 0],
+                    [0, 0, 0, 0, 0, 0],
+                ],
+            ],
+            dtype=torch.float32,
         ).unsqueeze_(0)
-        self.assertTrue(tuple(x.shape),(1,3,6,6))
-        self.fail()
+
+        y = torch.tensor(
+            [
+                [
+                    [1, 0, 0, 0, 0, 1],
+                    [0, 0, 0, 0, 0, 0],
+                    [0, 0, 1, 1, 0, 0],
+                    [0, 0, 0, 0, 1, 0],
+                    [1, 0, 1, 0, 0, 0],
+                    [0, 0, 0, 0, 1, 0],
+                ],
+                [
+                    [0, 0, 0, 0, 0, 0],
+                    [0, 0, 0, 0, 0, 0],
+                    [0, 0, 0, 0, 0, 0],
+                    [0, 0, 0, 0, 0, 0],
+                    [0, 0, 0, 0, 0, 0],
+                    [0, 0, 0, 0, 0, 0],
+                ],
+                [
+                    [0, 0, 0, 0, 0, 0],
+                    [0, 0, 0, 0, 0, 0],
+                    [0, 0, 0, 0, 0, 0],
+                    [0, 0, 0, 0, 0, 0],
+                    [0, 0, 0, 0, 0, 0],
+                    [0, 0, 0, 0, 0, 0],
+                ],
+            ],
+            dtype=torch.float32,
+        ).unsqueeze_(0)
+
+        self.assertEqual(x.shape, (1, 3, 6, 6))
+        y_dec_patch_indexs = sf._get_best_patch_index(x, y)
+        
+        self.assertEqual(
+            y_dec_patch_indexs,
+            (
+                (torch.tensor(0), torch.tensor(0)),
+                (torch.tensor(0), torch.tensor(3)),
+                (torch.tensor(3), torch.tensor(0)),
+                (torch.tensor(3), torch.tensor(3)),
+            ),
+        )
+
+        
 
     @patch("dsin.ae.si_finder.SiFinder.KERNEL_SIZE", 8)
     def test_create_x_patches(self):

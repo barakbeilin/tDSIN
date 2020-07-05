@@ -10,38 +10,46 @@ class SiFinder(nn.Module):
     def create_y_syn(self, x_dec: torch.Tensor, y_dec: torch.Tensor, y: torch.Tensor):
         pass
 
-    def _find_best_patch_index(self, x_dec: torch.Tensor, y_dec: torch.Tensor):
+    def _get_best_patch_index(self, x_dec: torch.Tensor, y_dec: torch.Tensor):
         """
-        Fsind the patch index in (row,col) fromat of y_dec patch with max
-        correlation for each patch in x_dec
+        Find the index of top left corener y_dec patch with max correlation
+        for each patch in x_dec.
+
+        index returned in (row,col) fromat.
 
         Parameters:
             x_dec : 1CHW, x_dec to find best patches
             y_dec: 1CHW
         """
         # PCKK
-        x_patches = self._get_x_patches()
+        x_patches = self._get_x_patches(x_dec)
 
-        # 1P(H-K)(W-K)
+        # 1P(H-K+1)(W-K+1)
         # P - nof x patches
         # K - x patch size
         # H,W - original size of y_dec
         x_y_dec_corr = self.pearson_corr(x_patches, y_dec)
         corr_shape = x_y_dec_corr.shape
 
-        # reshape into 1P[(H-K)*(W-K)] to allow maximization over a single dim.
+        # reshape into 1P[(H-K+1)*(W-K+1)] to allow maximization over a single dim.
         x_y_dec_corr = x_y_dec_corr.view(
             corr_shape[0], corr_shape[1], corr_shape[2] * corr_shape[3]
         )
-        best_patch_vector_index = torch.argmax(x_y_dec_corr, dim=-1)
+
+        # drop dim=0 which is just 1
+        best_patch_vector_index = torch.argmax(x_y_dec_corr[0, :, :], dim=-1)
 
         return tuple(
-            (v // x_patches.shape[-1], v % x_patches.shape[-1])
+            (v // corr_shape[-1], v % corr_shape[-1])
             for v in best_patch_vector_index
         )
 
     def _get_x_patches(self, x_dec: torch.Tensor):
-        """ Get nonoverlapping patches of size self.KERNEL_SIZE of x_dec."""
+        """Get non-overlapping patches of size self.KERNEL_SIZE of x_dec.
+
+        patch order is raster(scan by coloums then go to the next row of
+        patches).
+        """
         if (
             x_dec.shape[-1] % self.KERNEL_SIZE != 0
             or x_dec.shape[-2] % self.KERNEL_SIZE != 0
