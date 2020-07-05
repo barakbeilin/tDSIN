@@ -10,6 +10,7 @@ class TestSiFinder(unittest.TestCase):
         sf = SiFinder()
         
 
+
     @patch("dsin.ae.si_finder.SiFinder.KERNEL_SIZE", 3)
     def test_best_patch_is_returned(self):
         sf = SiFinder()
