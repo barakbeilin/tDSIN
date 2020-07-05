@@ -52,6 +52,9 @@ class SiFinder(nn.Module):
             aligned=False,
         )
 
+        return y_patches.permute(1,2,0,3).reshape(x_dec.shape)
+
+
     def _get_best_patch_index(self, x_dec: torch.Tensor, y_dec: torch.Tensor):
         """
         Find the index of top left corener y_dec patch with max correlation
