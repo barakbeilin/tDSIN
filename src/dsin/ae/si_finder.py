@@ -7,6 +7,7 @@ from torchvision.ops import roi_align
 class SiFinder(nn.Module):
     KERNEL_SIZE = 24
     INPUT_CHANNELS = 3
+    CORR_SIGMA = 1e-6
 
     def create_y_syn(self, x_dec: torch.Tensor, y_dec: torch.Tensor, y: torch.Tensor):
         """
@@ -92,7 +93,7 @@ class SiFinder(nn.Module):
 
         # drop dim=0 which is just 1
         best_patch_vector_index = torch.argmax(x_y_dec_corr[0, :, :], dim=-1)
-
+        # divide and modulu over the width to find the row and the coloumn
         return tuple(
             (v // corr_shape[-1], v % corr_shape[-1]) for v in best_patch_vector_index
         )
@@ -213,5 +214,5 @@ class SiFinder(nn.Module):
         denominator = denominator_x * denominator_y
         ##################
 
-        return numerator / denominator
+        return (numerator + SiFinder.CORR_SIGMA) / (denominator + SiFinder.CORR_SIGMA)
 

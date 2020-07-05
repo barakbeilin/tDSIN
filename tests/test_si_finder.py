@@ -8,7 +8,35 @@ class TestSiFinder(unittest.TestCase):
     @patch("dsin.ae.si_finder.SiFinder.KERNEL_SIZE", 3)
     def test_ysyn_creation(self):
         sf = SiFinder()
-        y = torch.linspace(start=0, end=3 * 6 * 6 - 1, steps=3 * 6 * 6).view(1, 3, 6, 6)
+        y = torch.tensor(
+            [
+                [
+                    [0, 0, 0, 1, 1, 1],
+                    [0, 0, 0, 1, 1, 1],
+                    [0, 0, 0, 1, 1, 1],
+                    [2, 2, 2, 3, 3, 3],
+                    [2, 2, 2, 3, 3, 3],
+                    [2, 2, 2, 3, 3, 3],
+                ],
+                [
+                    [0, 0, 0, 1, 1, 1],
+                    [0, 0, 0, 1, 1, 1],
+                    [0, 0, 0, 1, 1, 1],
+                    [2, 2, 2, 3, 3, 3],
+                    [2, 2, 2, 3, 3, 3],
+                    [2, 2, 2, 3, 3, 3],
+                ],
+                [
+                    [0, 0, 0, 1, 1, 1],
+                    [0, 0, 0, 1, 1, 1],
+                    [0, 0, 0, 1, 1, 1],
+                    [2, 2, 2, 3, 3, 3],
+                    [2, 2, 2, 3, 3, 3],
+                    [2, 2, 2, 3, 3, 3],
+                ],
+            ],
+            dtype=torch.float32,
+        ).unsqueeze_(0)
 
         x = torch.tensor(
             [
@@ -41,7 +69,7 @@ class TestSiFinder(unittest.TestCase):
         ).unsqueeze_(0)
 
         # y_dec = x.clone().detach()
-        y_dec =  torch.tensor(
+        y_dec = torch.tensor(
             [
                 [
                     [0, 0, 0, 0, 1, 0],
@@ -70,9 +98,45 @@ class TestSiFinder(unittest.TestCase):
             ],
             dtype=torch.float32,
         ).unsqueeze_(0)
+
         y_syn = sf.create_y_syn(x_dec=x, y_dec=y_dec, y=y)
-        print(y_syn)
-        self.fail()
+        self.assertTrue(
+            torch.all(
+                torch.eq(
+                    y_syn,
+                    torch.tensor(
+                        [
+                            [
+                                [
+                                    [2.0, 2.0, 2.0, 3.0, 3.0, 3.0],
+                                    [2.0, 2.0, 2.0, 3.0, 3.0, 3.0],
+                                    [2.0, 2.0, 2.0, 3.0, 3.0, 3.0],
+                                    [0.0, 0.0, 0.0, 1.0, 1.0, 1.0],
+                                    [0.0, 0.0, 0.0, 1.0, 1.0, 1.0],
+                                    [0.0, 0.0, 0.0, 1.0, 1.0, 1.0],
+                                ],
+                                [
+                                    [2.0, 2.0, 2.0, 3.0, 3.0, 3.0],
+                                    [2.0, 2.0, 2.0, 3.0, 3.0, 3.0],
+                                    [2.0, 2.0, 2.0, 3.0, 3.0, 3.0],
+                                    [0.0, 0.0, 0.0, 1.0, 1.0, 1.0],
+                                    [0.0, 0.0, 0.0, 1.0, 1.0, 1.0],
+                                    [0.0, 0.0, 0.0, 1.0, 1.0, 1.0],
+                                ],
+                                [
+                                    [2.0, 2.0, 2.0, 3.0, 3.0, 3.0],
+                                    [2.0, 2.0, 2.0, 3.0, 3.0, 3.0],
+                                    [2.0, 2.0, 2.0, 3.0, 3.0, 3.0],
+                                    [0.0, 0.0, 0.0, 1.0, 1.0, 1.0],
+                                    [0.0, 0.0, 0.0, 1.0, 1.0, 1.0],
+                                    [0.0, 0.0, 0.0, 1.0, 1.0, 1.0],
+                                ],
+                            ]
+                        ]
+                    ),
+                )
+            )
+        )
 
     @patch("dsin.ae.si_finder.SiFinder.KERNEL_SIZE", 3)
     def test_best_patch_is_returned(self):
