@@ -19,15 +19,15 @@ class TestSIAE(unittest.TestCase):
             x_quantizer_index_of_closest_center,
         ) = si_ae(x=x, y=y)
 
-
-
-
-
         self.assertEqual(tuple(x_reconstructed.shape), (1, 3, 192, 144))
         self.assertEqual(tuple(x_dec.shape), (1, 3, 192, 144))
-        self.assertEqual(tuple(x_pc.shape), (1, 6, 32, 192/8, 144/8))
-        self.assertEqual(tuple(importance_map_mult_weights.shape), (1, 32, 192/8, 144/8))
-        self.assertEqual(tuple(x_quantizer_index_of_closest_center.shape), (1, 32, 192/8, 144/8))
+        self.assertEqual(tuple(x_pc.shape), (1, 6, 32, 192 / 8, 144 / 8))
+        self.assertEqual(
+            tuple(importance_map_mult_weights.shape), (1, 32, 192 / 8, 144 / 8)
+        )
+        self.assertEqual(
+            tuple(x_quantizer_index_of_closest_center.shape), (1, 32, 192 / 8, 144 / 8)
+        )
 
     def test_flow_without_si(self):
         si_ae = SideInformationAutoEncoder(SiNetChannelIn.NoSideInformation)
@@ -41,9 +41,13 @@ class TestSIAE(unittest.TestCase):
             x_quantizer_index_of_closest_center,
         ) = si_ae(x=x, y=None)
         self.assertEqual(tuple(x_dec.shape), (1, 3, 192, 144))
-        self.assertEqual(tuple(x_pc.shape), (1, 6, 32, 192/8, 144/8))
-        self.assertEqual(tuple(importance_map_mult_weights.shape), (1, 32, 192/8, 144/8))
-        self.assertEqual(tuple(x_quantizer_index_of_closest_center.shape), (1, 32, 192/8, 144/8))
+        self.assertEqual(tuple(x_pc.shape), (1, 6, 32, 192 / 8, 144 / 8))
+        self.assertEqual(
+            tuple(importance_map_mult_weights.shape), (1, 32, 192 / 8, 144 / 8)
+        )
+        self.assertEqual(
+            tuple(x_quantizer_index_of_closest_center.shape), (1, 32, 192 / 8, 144 / 8)
+        )
 
 
 if __name__ == "__main__":
