@@ -2,9 +2,10 @@ import torch
 from torch import nn
 from enum import Enum
 from pytorch_msssim import ms_ssim
-from dsin.ae import config
 
 """https://discuss.pytorch.org/t/use-model-parameters-in-loss-function/17305"""
+
+
 class DistTypes(Enum):
     MAE = 0
     MSE = 1
@@ -98,41 +99,41 @@ class Distortions:
         return loss(x_l, target_l)
 
 
-def get_loss(auto_encoder, probability_classiffier, d_loss_scaled, bit_count, heatmap):
-    """
-    THIS IS A UTILITY WHICH SHOULD BE MOVED ANOTHER PLACE + ADD TESTS TO IT.
-    """
-    heatmap_enabled = heatmap is not None
-    bit_count_mask = (bit_count * heatmap) if heatmap_enabled else bit_count
+# def get_loss(auto_encoder, probability_classiffier, d_loss_scaled, bit_count, heatmap):
+#     """
+#     THIS IS A UTILITY WHICH SHOULD BE MOVED ANOTHER PLACE + ADD TESTS TO IT.
+#     """
+#     heatmap_enabled = heatmap is not None
+#     bit_count_mask = (bit_count * heatmap) if heatmap_enabled else bit_count
 
-    # estimated entropy calculation
-    H_real = torch.mean(bit_count)
-    H_mask = torch.mean(bit_count_mask)
-    H_soft = 0.5 * (H_mask + H_real)
+#     # estimated entropy calculation
+#     H_real = torch.mean(bit_count)
+#     H_mask = torch.mean(bit_count_mask)
+#     H_soft = 0.5 * (H_mask + H_real)
 
-    H_target = config.H_target
-    beta = config.beta
+#     H_target = config.H_target
+#     beta = config.beta
 
-    # probability-classifier (pc)
-    pc_loss = beta * torch.max(
-        H_soft - H_target, torch.tensor(0.0, dtype=torch.float32)
-    )
+#     # probability-classifier (pc)
+#     pc_loss = beta * torch.max(
+#         H_soft - H_target, torch.tensor(0.0, dtype=torch.float32)
+#     )
 
-    # # Adding Regularizers
-    # with tf.name_scope("regularization_losses"):
-    #     reg_probclass = pc.regularization_loss()
-    #     if reg_probclass is None:
-    #         reg_probclass = 0
-    #     reg_enc = ae.encoder_regularization_loss()
-    #     reg_dec = ae.decoder_regularization_loss()
-    #     reg_loss = reg_probclass + reg_enc + reg_dec
+#     # # Adding Regularizers
+#     # with tf.name_scope("regularization_losses"):
+#     #     reg_probclass = pc.regularization_loss()
+#     #     if reg_probclass is None:
+#     #         reg_probclass = 0
+#     #     reg_enc = ae.encoder_regularization_loss()
+#     #     reg_dec = ae.decoder_regularization_loss()
+#     #     reg_loss = reg_probclass + reg_enc + reg_dec
 
-    pc_comps = [
-        ("H_mask", H_mask),
-        ("H_real", H_real),
-        ("pc_loss", pc_loss),
-    ]
-    ae_comps = [("d_loss_scaled", d_loss_scaled)]
+#     pc_comps = [
+#         ("H_mask", H_mask),
+#         ("H_real", H_real),
+#         ("pc_loss", pc_loss),
+#     ]
+#     ae_comps = [("d_loss_scaled", d_loss_scaled)]
 
-    total_loss = d_loss_scaled + pc_loss  #+ reg_loss
-    return total_loss, H_real, pc_comps, ae_comps
+#     total_loss = d_loss_scaled + pc_loss  # + reg_loss
+#     return total_loss, H_real, pc_comps, ae_comps

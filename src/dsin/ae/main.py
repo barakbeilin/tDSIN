@@ -5,6 +5,7 @@ from dsin.ae.si_ae import SideInformationAutoEncoder
 from dsin.ae.si_net import SiNetChannelIn
 from dsin.ae.loss_man import LossManager
 from dsin.ae.distortions import Distortions
+from dsin.ae.kitti_normalizer import ChangeImageStatsToKitti, ChangeState
 
 
 def main():
@@ -12,11 +13,14 @@ def main():
     loss_manager = LossManager()
     si_net_loss = loss_manager.create_si_net_loss()
     optimizer = torch.optim.Adam(si_autoencoder.parameters(), lr=1e-4)
+    denoramlize = ChangeImageStatsToKitti(direction=ChangeState.DENORMALIZE)
+    x = denoramlize(torch.randn(1, 3, 192, 144))
+    y = denoramlize(torch.randn(1, 3, 192, 144))
 
     B = 1
     for t in range(B):
-        x = torch.tensor()
-        y = torch.tensor()
+
+        # change image stats to mock kitti image
 
         (
             x_reconstructed,
@@ -26,7 +30,7 @@ def main():
             x_quantizer_index_of_closest_center,
         ) = si_autoencoder(x=x, y=y)
 
-        bit_cost_loss_value = self.lm.get_bit_cost_loss(
+        bit_cost_loss_value = loss_manager.get_bit_cost_loss(
             pc_output=x_pc,
             quantizer_closest_center_index=x_quantizer_index_of_closest_center,
             importance_map_mult_weights=importance_map_mult_weights,
@@ -56,6 +60,7 @@ def main():
         optimizer.zero_grad()
         total_loss.backward()
         optimizer.step()
+
 
 if __name__ == "__main__":
     main()

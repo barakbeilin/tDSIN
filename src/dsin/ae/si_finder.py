@@ -112,9 +112,11 @@ class SiFinder(nn.Module):
             x_dec.shape[-1] % self.KERNEL_SIZE != 0
             or x_dec.shape[-2] % self.KERNEL_SIZE != 0
         ):
-            raise ValueError(f"{x_dec.shape=} is not divided by {self.KERNEL_SIZE=}")
+            raise ValueError(
+                f"x_dec.scondhape={x_dec.scondhape} is not divided by self.KERNEL_SIZE={self.KERNEL_SIZE}"
+            )
         if x_dec.shape[0] != 1:
-            raise ValueError(f"support batch size 1 only while {x_dec.shape[0]=}")
+            raise ValueError(f"support batch size 1 only while x_dec.shape[0]{x_dec.shape[0]}")
 
         patch_creator = self._get_patch_creator()
 

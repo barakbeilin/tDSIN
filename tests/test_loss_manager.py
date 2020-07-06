@@ -56,11 +56,11 @@ class TestLossMan(unittest.TestCase):
         # >>> x0 = [0.1 , 0.9]
         # >>> softmax_p =-np.log(np.exp(x0)/sum(np.exp(x0)))
         # >>> target_class = torch.tensor([1, 0 ,1]).unsqueeze_(0)
-        # >>> print(f"{softmax_p[1]=}")
-        # >>> print(f"{x.shape=}")
-        # >>> print(f"{x=}")
-        # >>> print(f"{loss(x,target_class)=}")
-        # >>> print(f"{loss(x,target_class).shape=}")
+        # >>> print(f"softmax_p[1]={softmax_p[1]}")
+        # >>> print(f"x.shape={x.shape}")
+        # >>> print(f"x={x}")
+        # >>> print(f"loss(x,target_class)={loss(x,target_class)}")
+        # >>> print(f"loss(x,target_class).shape={loss(x,target_class).shape}")
         self.assertEqual(
             tuple(self.lm.cross_entropy_loss_in_bits.data.shape), (1, 3, 1)
         )

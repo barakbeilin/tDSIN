@@ -1,7 +1,7 @@
 import torch
 from torch import nn
 from enum import Enum
-from dsin.ae.autoencoder_imgcomp import ChangeImageStatsToKitti, ChangeState
+from dsin.ae.kitti_normalizer import ChangeImageStatsToKitti, ChangeState
 
 
 class SiNetChannelIn(Enum):

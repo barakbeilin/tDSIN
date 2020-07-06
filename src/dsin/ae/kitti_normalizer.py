@@ -18,7 +18,7 @@ class ChangeImageStatsToKitti(nn.Module):
 
         self.direction = direction
         if input_channels % 3 != 0:
-            raise ValueError(f"{input_channels=}, should divide be 3 ")
+            raise ValueError(f"input_channels {input_channels}, should divide be 3 ")
         self.channel_repeat_factor = input_channels // 3
 
         mean, var = self._get_stats(self.channel_repeat_factor)
