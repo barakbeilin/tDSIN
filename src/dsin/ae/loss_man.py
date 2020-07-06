@@ -47,4 +47,9 @@ class LossManager:
         soft_bit_entropy = 0.5 * (mean_masked_bit_entropy + mean_real_bit_entropy)
 
         return beta_factor * torch.max(
-            soft_bit_entropy - target_bit_cost, torch.tensor(0.0, dtype=torch.float32))
+            soft_bit_entropy - target_bit_cost, torch.tensor(0.0, dtype=torch.float32)
+        )
+
+    @staticmethod
+    def create_si_net_loss():
+        return nn.L1Loss(reduction="mean")

@@ -7,6 +7,14 @@ class TestLossMan(unittest.TestCase):
     def setUp(self):
         self.lm = LossManager()
 
+    def test_create_si_net_loss(self):
+        loss = self.lm.create_si_net_loss()
+        x = torch.randn(3, 3, 2, 2)
+        target = x + 2
+        output = loss(x, target)
+        self.assertEqual(tuple(output.shape), tuple())
+        self.assertTrue(torch.all(torch.eq(output, torch.tensor([2.0]))))
+
     def test_rebase_factor(self):
         self.assertAlmostEqual(
             self.lm.log_natural_base_to_base2_factor, 1.442, delta=0.001
@@ -53,7 +61,9 @@ class TestLossMan(unittest.TestCase):
         # >>> print(f"{x=}")
         # >>> print(f"{loss(x,target_class)=}")
         # >>> print(f"{loss(x,target_class).shape=}")
-        self.assertEqual(tuple(self.lm.cross_entropy_loss_in_bits.data.shape), (1, 3, 1))
+        self.assertEqual(
+            tuple(self.lm.cross_entropy_loss_in_bits.data.shape), (1, 3, 1)
+        )
 
     def test_masked_bit_entropy_is_correct(self):
         # NCHW = 1,2,3,1
