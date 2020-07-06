@@ -3,5 +3,5 @@
     "python.linting.pylintEnabled": false,
     "python.linting.flake8Enabled": true,
     "python.linting.enabled": true,
-    "python.pythonPath": "/home/t/anaconda3/envs/torch/bin/python"
+    "python.pythonPath": "/home/t/anaconda3/envs/tfastai/bin/python"
 }
