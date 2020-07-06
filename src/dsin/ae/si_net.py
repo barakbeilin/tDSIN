@@ -33,9 +33,6 @@ class SiNet(nn.Module):
 
         internal_layers = sum(internal_layers, ())
         self.layers = [
-            ChangeImageStatsToKitti(
-                direction=ChangeState.NORMALIZE, input_channels=in_channels.value
-            ),
             nn.Conv2d(
                 in_channels=in_channels.value,
                 out_channels=32,
