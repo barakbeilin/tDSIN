@@ -30,6 +30,8 @@ class MaskedConv3d(nn.Module):
         nn.init.constant_(self.conv.bias, 0)
 
     def forward(self, x):
+        # before runnign convolution apply mask on the weights of the
+        # convolution kernel to keep it causal.
         self._mask_conv_filter()
         return self.conv(x)
 
