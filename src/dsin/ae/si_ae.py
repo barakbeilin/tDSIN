@@ -75,7 +75,7 @@ class SideInformationAutoEncoder(nn.Module):
             # N|3|H|W
             # TODO: DELETE AND PASS INTO cat DIRECTLY
             normalized_y_syn = self.noramlize(
-                self.calc_y_syn(y=y, x_dec=normalized_x_dec)
+                self.calc_y_syn(y=y, normalized_x_dec=normalized_x_dec)
             )
 
             # N|6|H|W, concat on channel dim
@@ -97,12 +97,13 @@ class SideInformationAutoEncoder(nn.Module):
             x_quantizer_index_of_closest_center,  # for probability classifier loss
         )
 
-    def calc_y_syn(self, y, x_dec):
+    def calc_y_syn(self, y, normalized_x_dec):
+
         # stop gradients in si-finder and calculation of y_dec
         with torch.no_grad():
             _, y_post_map = self.importance_map_layer(self.enc(y))
             y_quantizer_soft, _, _ = self.quantizer(y_post_map)
-            y_dec = self.dec(y_quantizer_soft)
+            normalized_y_dec = self.noramlize(self.dec(y_quantizer_soft))
 
             # y_syn N|3|H|W
-            return self.si_finder.create_y_syn(x_dec=x_dec, y_dec=y_dec, y=y)
+            return self.si_finder.create_y_syn(x_dec=normalized_x_dec, y_dec=normalized_y_dec, y=y)

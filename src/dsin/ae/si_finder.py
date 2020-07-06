@@ -15,8 +15,12 @@ class SiFinder(nn.Module):
         Let patch is places in index A inside y_syn,
         the patch is taken from y at index B.
         B is the offset of the patch in y_dec which has the maximum correlation
-        to a pathc in index A in x_dec.
-         
+        to a patch in index A in x_dec.
+
+        x_dec and y_dec should be normalized to the smame standart
+        y is not required to be normalized as it patches are only assembled, but
+        no calculation are peromed on them.
+
         x_dec: tensor, 1CH`W`
         y_dec: tensor, 1CHW
         """
