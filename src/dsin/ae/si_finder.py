@@ -113,7 +113,7 @@ class SiFinder(nn.Module):
             or x_dec.shape[-2] % self.KERNEL_SIZE != 0
         ):
             raise ValueError(
-                f"x_dec.scondhape={x_dec.scondhape} is not divided by self.KERNEL_SIZE={self.KERNEL_SIZE}"
+                f"x_dec.shape={x_dec.shape} is not dividable by self.KERNEL_SIZE={self.KERNEL_SIZE}"
             )
         if x_dec.shape[0] != 1:
             raise ValueError(f"support batch size 1 only while x_dec.shape[0]{x_dec.shape[0]}")

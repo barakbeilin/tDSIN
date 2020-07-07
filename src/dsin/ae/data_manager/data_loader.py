@@ -28,8 +28,10 @@ class SegmentationProcessor(PreProcessor):
     def process(self, ds: ItemList):  ds.classes, ds.c = self.classes, len(
         self.classes)
 
+
 class PoopException(Exception):
     pass
+
 
 class TargetSiList(ItemList):
     def reconstruct(self, t: Tensor):
@@ -47,6 +49,10 @@ class SideinformationImageImageList(ImageList):
         self.si_items = si_items
         self.copy_new.append('si_items')
 
+    def after_open(self, img):
+        img.px = img.px[:, 295:295+77, 262:252+94]
+        return img
+
     def get(self, i):
         # get an image, opened by self.open()
         img = super().get(i)
@@ -55,7 +61,7 @@ class SideinformationImageImageList(ImageList):
 
     def open(self, fn):
         "Open image in `fn`, subclass and overwrite for custom behavior."
-        return open_image(fn, convert_mode=self.convert_mode, after_open=self.after_open)
+        return open_image(fn, div=True, convert_mode=self.convert_mode, after_open=self.after_open)
 
     def reconstruct(self, x):
         # def reconstruct(self, t, x):
