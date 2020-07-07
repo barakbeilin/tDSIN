@@ -45,6 +45,13 @@ class SideinformationImageImageList(ImageList):
     _label_cls = ImageList
 
     def __init__(self, items, si_items=None, **kwargs):
+        """Parameters:
+            items - list of images.
+            si_items - list of side information images.
+        """
+        # items passed to the superclass so that when call lbal_from_func the
+        # obejct that gets called is `items` so this is the yb that's also pased
+        # to the loss function.
         super().__init__(items, **kwargs)
         self.si_items = si_items
         self.copy_new.append('si_items')
@@ -63,7 +70,7 @@ class SideinformationImageImageList(ImageList):
         "Open image in `fn`, subclass and overwrite for custom behavior."
         return open_image(fn, div=True, convert_mode=self.convert_mode, after_open=self.after_open)
 
-    def reconstruct(self, x):
+    def reconstruct(self, t):
         # def reconstruct(self, t, x):
         """Called in data.show_batch(), learn.predict() or learn.show_results()
         Transform tensor back into an ItemBase

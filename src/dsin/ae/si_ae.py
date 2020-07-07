@@ -89,6 +89,7 @@ class SideInformationAutoEncoder(nn.Module):
         else:
             x_reconstructed = None
 
+        
         return (
             x_reconstructed,  # for total loss
             x_dec,  # for auto-encoder loss

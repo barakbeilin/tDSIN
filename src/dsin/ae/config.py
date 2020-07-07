@@ -1,7 +1,7 @@
 from dsin.ae.distortions import DistTypes
 from dsin.ae.si_net import SiNetChannelIn
 
-use_si_flag = SiNetChannelIn.WithSideInformation
+use_si_flag = SiNetChannelIn.NoSideInformation #SiNetChannelIn.WithSideInformation
 
 H_target = 2 * 0.02  # == 64/C * bpp
 beta = 500
