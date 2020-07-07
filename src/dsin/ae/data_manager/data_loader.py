@@ -28,16 +28,19 @@ class SegmentationProcessor(PreProcessor):
     def process(self, ds: ItemList):  ds.classes, ds.c = self.classes, len(
         self.classes)
 
+class PoopException(Exception):
+    pass
 
 class TargetSiList(ItemList):
     def reconstruct(self, t: Tensor):
+        raise
         if len(t.size()) == 0:
             return t
         return ImageSiTuple(Image(t[0]), Image(t[1]))
 
 
 class SideinformationImageImageList(ImageList):
-    _label_cls = TargetSiList
+    _label_cls = ImageList
 
     def __init__(self, items, si_items=None, **kwargs):
         super().__init__(items, **kwargs)
