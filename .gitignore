@@ -1,3 +1,4 @@
 .ipynb_checkpoints/
 src/tDSIN.egg-info/*
 *.pyc
+src/dsin/data/training
