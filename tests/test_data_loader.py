@@ -7,7 +7,7 @@ class TestDataLoader(unittest.TestCase):
     def setUp(self):
         self.image_list = SideinformationImageImageList.from_csv(
             path="/mnt/code/repos/tDSIN/src/dsin/data",
-            csv_name="tiny_KITTI_stereo_train.txt")
+            csv_names=["tiny_KITTI_stereo_train.txt"])
 
     def test_si_image_list_work(self):
         self.assertEqual(len(self.image_list), 50)

@@ -22,70 +22,78 @@ class ImageSiTuple(ItemBase):
         # return Image(0.5+torch.cat(self.data,2)/2)
         return Image(torch.cat(self.data, 2))
 
+
 class SegmentationProcessor(PreProcessor):
-    def __init__(self, ds:ItemList): self.classes = ds.classes
-    def process(self, ds:ItemList):  ds.classes,ds.c = self.classes,len(self.classes)
+    def __init__(self, ds: ItemList): self.classes = ds.classes
+    def process(self, ds: ItemList):  ds.classes, ds.c = self.classes, len(
+        self.classes)
 
 
 class TargetSiList(ItemList):
-    def reconstruct(self, t:Tensor): 
-        if len(t.size()) == 0: return t
-        return ImageSiTuple(Image(t[0]),Image(t[1]))
+    def reconstruct(self, t: Tensor):
+        if len(t.size()) == 0:
+            return t
+        return ImageSiTuple(Image(t[0]), Image(t[1]))
 
 
 class SideinformationImageImageList(ImageList):
-    _label_cls=TargetSiList
+    _label_cls = TargetSiList
+
     def __init__(self, items, si_items=None, **kwargs):
         super().__init__(items, **kwargs)
         self.si_items = si_items
         self.copy_new.append('si_items')
-        
+
     def get(self, i):
         # get an image, opened by self.open()
-        img = super().get(i) 
+        img = super().get(i)
         si_img_file_name = self.si_items[i]
         return ImageSiTuple(img=img, si_img=self.open(si_img_file_name))
-  
+
     def open(self, fn):
         "Open image in `fn`, subclass and overwrite for custom behavior."
         return open_image(fn, convert_mode=self.convert_mode, after_open=self.after_open)
-    
+
     def reconstruct(self, x):
-        #def reconstruct(self, t, x):
+        # def reconstruct(self, t, x):
         """Called in data.show_batch(), learn.predict() or learn.show_results()
         Transform tensor back into an ItemBase
-        
+
         DONT CHANGE x !
         """
         return ImageSiTuple(Image(t[0]), Image(t[1]))
 
     @classmethod
-    def from_csv(cls, path:PathOrStr, csv_name:str, header:str=None, delimiter:str='\n', **kwargs)->'SideinformationImageImageList':
-        "Get the filenames in `path/csv_name` opened with `header`."
+    def from_csv(cls, path: PathOrStr, csv_names: List, header: str = None, delimiter: str = '\n', **kwargs) -> 'SideinformationImageImageList':
+        """
+        Get the filenames in `path/csv_name` for each csv_name in csv_names.
+        csv file opened with `header` with delimiter.
+        """
         path = Path(path)
-        df = pd.read_csv(path/csv_name, header=None, delimiter=delimiter)
-        
+        dfs = [pd.read_csv(path/csv_name, header=None, delimiter=delimiter)
+               for csv_name in csv_names]
+        df = pd.concat(dfs, ignore_index=True)
         # image path's are intermittent
-        img_df, si_img_df=df.iloc[1::2], df.iloc[0::2]
-              
-        si_items = ImageList.from_df(path=path, df=si_img_df,**kwargs).items
-        res = super().from_df(path=path, df=img_df,si_items=si_items, **kwargs)
+        img_df, si_img_df = df.iloc[1::2], df.iloc[0::2]
+
+        si_items = ImageList.from_df(path=path, df=si_img_df, **kwargs).items
+        res = super().from_df(path=path, df=img_df, si_items=si_items, **kwargs)
         return res
-    
-    def show_xys(self, xs, ys, figsize:Tuple[int,int]=(12,6), **kwargs):
+
+    def show_xys(self, xs, ys, figsize: Tuple[int, int] = (12, 6), **kwargs):
         "Show the `xs` and `ys` on a figure of `figsize`. `kwargs` are passed to the show method."
         rows = int(math.sqrt(len(xs)))
-        fig, axs = plt.subplots(rows,rows,figsize=figsize)
+        fig, axs = plt.subplots(rows, rows, figsize=figsize)
         for i, ax in enumerate(axs.flatten() if rows > 1 else [axs]):
             xs[i].to_one().show(ax=ax, **kwargs)
         plt.tight_layout()
 
-    def show_xyzs(self, xs, ys, zs, figsize:Tuple[int,int]=None, **kwargs):
+    def show_xyzs(self, xs, ys, zs, figsize: Tuple[int, int] = None, **kwargs):
         """Show `xs` (inputs), `ys` (targets) and `zs` (predictions) on a figure of `figsize`.
         `kwargs` are passed to the show method."""
-        figsize = ifnone(figsize, (12,3*len(xs)))
-        fig,axs = plt.subplots(len(xs), 2, figsize=figsize)
+        figsize = ifnone(figsize, (12, 3*len(xs)))
+        fig, axs = plt.subplots(len(xs), 2, figsize=figsize)
         fig.suptitle('Ground truth / Predictions', weight='bold', size=14)
-        for i,(x,z) in enumerate(zip(xs,zs)):
-            x.to_one().show(ax=axs[i,0], **kwargs)
-            z.to_one().show(ax=axs[i,1], **kwargs)
+        for i, (x, z) in enumerate(zip(xs, zs)):
+            x.to_one().show(ax=axs[i, 0], **kwargs)
+            z.to_one().show(ax=axs[i, 1], **kwargs)
