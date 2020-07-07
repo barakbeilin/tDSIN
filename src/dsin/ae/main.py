@@ -61,6 +61,7 @@ def main():
         total_loss.backward()
         optimizer.step()
 
+def main2()
 
 if __name__ == "__main__":
     main()
