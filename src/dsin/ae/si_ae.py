@@ -35,22 +35,25 @@ class SideInformationAutoEncoder(nn.Module):
             receptive_field=config.quantizer_kernel_w_h,
         )
 
-        self.si_net = SiNet(in_channels=self.use_side_infomation, use_eye_init=True)
+        self.si_net = SiNet(
+            in_channels=self.use_side_infomation, use_eye_init=True)
 
         self.si_finder = SiFinder()
 
-        self.noramlize = ChangeImageStatsToKitti(direction=ChangeState.NORMALIZE)
-        self.denoramlize = ChangeImageStatsToKitti(direction=ChangeState.DENORMALIZE)
+        self.noramlize = ChangeImageStatsToKitti(
+            direction=ChangeState.NORMALIZE)
+        self.denoramlize = ChangeImageStatsToKitti(
+            direction=ChangeState.DENORMALIZE)
 
     def forward(self, x: torch.tensor, y: torch.tensor):
-
         # N| nof inpput Quantization Channels + 1|H/8|W/8
         # TODO: DELETE AND PASS INTO importance_map_layer DIRECTLY
-        x_enc = self.enc(x)
+        x_enc = self.enc(x * config.open_image_normalization)
 
         # improtance map - N|nof input quantization channels|H/8|W/8
         # x_post_map - N|nof input quantization channels|H/8|W/8
-        importance_map_mult_weights, x_post_map = self.importance_map_layer(x_enc)
+        importance_map_mult_weights, x_post_map = self.importance_map_layer(
+            x_enc)
 
         # N|nof input Quntization Channels|H|W
         # x_soft - data values are from centers alphabet, gradients from softmax
@@ -71,7 +74,7 @@ class SideInformationAutoEncoder(nn.Module):
 
         if self.use_side_infomation == SiNetChannelIn.WithSideInformation:
             normalized_x_dec = self.noramlize(x_dec)
-
+            y = y * config.open_image_normalization
             # N|3|H|W
             # TODO: DELETE AND PASS INTO cat DIRECTLY
             normalized_y_syn = self.noramlize(
@@ -85,11 +88,11 @@ class SideInformationAutoEncoder(nn.Module):
             )
 
             # N|3|H|W
-            x_reconstructed = self.denoramlize(self.si_net(normalized_x_dec_y_syn))
+            x_reconstructed = self.denoramlize(
+                self.si_net(normalized_x_dec_y_syn))
         else:
             x_reconstructed = None
 
-        
         return (
             x_reconstructed,  # for total loss
             x_dec,  # for auto-encoder loss

@@ -16,7 +16,7 @@ class LossManager(nn.Module):
         # don't average over batches, will happen after importance map mult.
         self.bit_cost_loss = nn.CrossEntropyLoss(reduction="none")
         self.si_net_loss = nn.L1Loss(reduction="mean")
-        self. use_side_infomation = use_side_infomation
+        self.use_side_infomation = use_side_infomation
 
     def forward(self, *args):
         (x_reconstructed,
@@ -24,7 +24,8 @@ class LossManager(nn.Module):
          x_pc,
          importance_map_mult_weights,
          x_quantizer_index_of_closest_center) = args[0]
-        x_orig = args[1]
+
+        x_orig = args[1] * config.open_image_normalization
 
         bit_cost_loss_value = self._get_bit_cost_loss(
             pc_output=x_pc,

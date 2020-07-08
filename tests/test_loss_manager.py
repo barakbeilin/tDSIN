@@ -1,14 +1,15 @@
 import unittest
+from unittest.mock import patch, MagicMock
 from dsin.ae.loss_man import *
 from dsin.ae import config
 
 
 class TestLossMan(unittest.TestCase):
     def setUp(self):
-        self.lm = LossManager()
+        self.lm = LossManager(SiNetChannelIn.WithSideInformation)
 
     def test_create_si_net_loss(self):
-        loss = self.lm.create_si_net_loss()
+        loss = self.lm.si_net_loss
         x = torch.randn(3, 3, 2, 2)
         target = x + 2
         output = loss(x, target)
@@ -34,7 +35,7 @@ class TestLossMan(unittest.TestCase):
         beta_factor = 1
         target_bit_cost = 0
 
-        bit_cost = self.lm.get_bit_cost_loss(
+        bit_cost = self.lm._get_bit_cost_loss(
             pc_output,
             quantizer_closest_center_index,
             importance_map_mult_weights,
@@ -80,7 +81,7 @@ class TestLossMan(unittest.TestCase):
         beta_factor = 1
         target_bit_cost = 0
 
-        bit_cost = self.lm.get_bit_cost_loss(
+        bit_cost = self.lm._get_bit_cost_loss(
             pc_output,
             quantizer_closest_center_index,
             importance_map_mult_weights,
@@ -96,7 +97,8 @@ class TestLossMan(unittest.TestCase):
                 atol=0.001,
             )
         )
-        self.assertEqual(tuple(self.lm.masked_bit_entropy.data.shape), (1, 3, 1))
+        self.assertEqual(
+            tuple(self.lm.masked_bit_entropy.data.shape), (1, 3, 1))
 
     def testget_bit_cost_loss_correct(self):
         # NCHW = 1,2,3,1
@@ -114,7 +116,7 @@ class TestLossMan(unittest.TestCase):
         beta_factor = 1
         target_bit_cost = 0
 
-        bit_cost = self.lm.get_bit_cost_loss(
+        bit_cost = self.lm._get_bit_cost_loss(
             pc_output,
             quantizer_closest_center_index,
             importance_map_mult_weights,
@@ -122,7 +124,8 @@ class TestLossMan(unittest.TestCase):
             target_bit_cost,
         )
 
-        self.assertTrue(torch.allclose(bit_cost, torch.tensor(1.2073), atol=0.001))
+        self.assertTrue(torch.allclose(
+            bit_cost, torch.tensor(1.2073), atol=0.001))
 
     def testget_bit_cost_loss_0clamp_correct(self):
         # NCHW = 1,2,3,1
@@ -140,7 +143,7 @@ class TestLossMan(unittest.TestCase):
         beta_factor = 1
         target_bit_cost = 1.208
 
-        bit_cost = self.lm.get_bit_cost_loss(
+        bit_cost = self.lm._get_bit_cost_loss(
             pc_output,
             quantizer_closest_center_index,
             importance_map_mult_weights,
@@ -148,7 +151,13 @@ class TestLossMan(unittest.TestCase):
             target_bit_cost,
         )
 
-        self.assertTrue(torch.allclose(bit_cost, torch.tensor(0.0), atol=0.001))
+        self.assertTrue(torch.allclose(
+            bit_cost, torch.tensor(0.0), atol=0.001))
+
+
+class TestLossMan2(TestLossMan):
+    def setUp(self):
+        self.lm = LossManager(SiNetChannelIn.WithSideInformation)
 
 
 if __name__ == "__main__":
