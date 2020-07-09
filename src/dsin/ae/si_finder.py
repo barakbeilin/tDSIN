@@ -55,7 +55,6 @@ class SiFinder(nn.Module):
             output_size=(patch_h, patch_w),
             spatial_scale=1.0,
             sampling_ratio=-1,
-            aligned=False,
         )
 
         # CKKP
