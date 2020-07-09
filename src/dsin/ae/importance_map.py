@@ -5,17 +5,20 @@ from torch import nn
 
 class MinMaxMap(torch.autograd.Function):
     @staticmethod
-    def forward(ctx, x):
+    def forward(ctx, x, device=None):
         """
         In the forward pass we receive a Tensor containing the input and return
         a Tensor containing the output. ctx is a context object that IS used
         to stash information for backward computation.
         """
         ctx.save_for_backward(x)
-        return torch.max(
-            torch.min(x, torch.tensor(1.0, dtype=torch.float32, requires_grad=False)),
-            torch.tensor(0.0, dtype=torch.float32, requires_grad=False),
-        )  # NCHW
+        t_one = torch.tensor(1.0, dtype=torch.float32, requires_grad=False)
+        t_zero = torch.tensor(0.0, dtype=torch.float32, requires_grad=False)
+        if device is None and torch.cuda.is_available():
+            t_one.cuda()
+            t_zero.cuda()
+
+        return torch.max(torch.min(x, t_one), t_zero)  # NCHW
 
     @staticmethod
     def backward(ctx, grad_output):
@@ -43,7 +46,8 @@ class ImportanceMapMult(nn.Module):
         self.use_map = use_map
         self.info_channels = info_channels
 
-        cl_param = torch.arange(start=0, end=self.info_channels, dtype=torch.float32)
+        cl_param = torch.arange(
+            start=0, end=self.info_channels, dtype=torch.float32)
         cl_param = torch.reshape(cl_param, (self.info_channels, 1, 1))
         self.register_buffer("cl_param", cl_param)
 
@@ -70,7 +74,7 @@ class ImportanceMapMult(nn.Module):
 
         importance_map.unsqueeze_(CHANNEL_DIM)  # N1HW
 
-        z = x[:, MAP_CHANNEL + 1 :, ...]
+        z = x[:, MAP_CHANNEL + 1:, ...]
 
         diff = importance_map - self.cl_param
 
