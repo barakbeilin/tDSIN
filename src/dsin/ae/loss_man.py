@@ -61,6 +61,7 @@ class LossManager(nn.Module):
         importance_map_mult_weights,
         beta_factor,
         target_bit_cost,
+        device=None,
     ):
         """
             Parameters:
@@ -90,7 +91,11 @@ class LossManager(nn.Module):
         soft_bit_entropy = 0.5 * \
             (mean_masked_bit_entropy + mean_real_bit_entropy)
 
-        return beta_factor * torch.max(
-            soft_bit_entropy -
-            target_bit_cost, torch.tensor(0.0, dtype=torch.float32)
-        )
+        if device is None and torch.cuda.is_available():
+            t_zero = torch.tensor(0.0, dtype=torch.float32,
+                                  requires_grad=False).cuda()
+        else:
+            t_zero = torch.tensor(
+                0.0, dtype=torch.float32, requires_grad=False)
+
+        return beta_factor * torch.max(soft_bit_entropy - target_bit_cost, t_zero)
