@@ -25,7 +25,8 @@ class SiFinder(nn.Module):
         y_dec: tensor, 1CHW
         """
         # tuple of P tuples of (row,col) patch offsets
-        patch_offsets_in_y_dec = self._get_best_patch_index(x_dec=x_dec, y_dec=y_dec)
+        patch_offsets_in_y_dec = self._get_best_patch_index(
+            x_dec=x_dec, y_dec=y_dec)
 
         patch_w = self.KERNEL_SIZE
         patch_h = self.KERNEL_SIZE
@@ -63,7 +64,8 @@ class SiFinder(nn.Module):
         # 1|(C*K*K)|P , nn.Fold expect on input the same shape that nn.Unfold
         # return.
         y_patches = y_patches.view(
-            1, x_dec.shape[1] * self.KERNEL_SIZE * self.KERNEL_SIZE, y_patches.shape[-1]
+            1, x_dec.shape[1] * self.KERNEL_SIZE *
+            self.KERNEL_SIZE, y_patches.shape[-1]
         )
 
         sticher = self._get_patch_stiching(output_size=x_dec.shape[-2:])
@@ -116,7 +118,8 @@ class SiFinder(nn.Module):
                 f"x_dec.shape={x_dec.shape} is not dividable by self.KERNEL_SIZE={self.KERNEL_SIZE}"
             )
         if x_dec.shape[0] != 1:
-            raise ValueError(f"support batch size 1 only while x_dec.shape[0]{x_dec.shape[0]}")
+            raise ValueError(
+                f"support batch size 1 only while x_dec.shape[0]{x_dec.shape[0]}")
 
         patch_creator = self._get_patch_creator()
 
@@ -159,7 +162,7 @@ class SiFinder(nn.Module):
         )
 
     @staticmethod
-    def pearson_corr(x_patches: torch.tensor, y: torch.tensor):
+    def pearson_corr(x_patches: torch.tensor, y: torch.tensor, device=None):
         """
         Calculate pearson_corr between patches of x_patches(PCKK) and y(1CHW).
 
@@ -192,11 +195,17 @@ class SiFinder(nn.Module):
         ################## sum_y, sum_of_y_square
         y_square = y ** 2
 
-        # kernel of dims PCKK will lead to output 1P(H-K+1)(W-K+1) with y as input
-        mean_kernel = torch.ones(
-            (x_patches.shape[0], y.shape[1], x_patches.shape[2], x_patches.shape[3]),
-            dtype=torch.float32,
-        )
+        if device is None and torch.cuda.is_available():
+            # kernel of dims PCKK will lead to output 1P(H-K+1)(W-K+1) with y as input
+            mean_kernel = torch.ones(
+                (x_patches.shape[0], y.shape[1],
+                 x_patches.shape[2], x_patches.shape[3]),
+                dtype=torch.float32).cuda()
+        else:
+            mean_kernel = torch.ones(
+                (x_patches.shape[0], y.shape[1],
+                 x_patches.shape[2], x_patches.shape[3]),
+                dtype=torch.float32)
 
         # dim - 1P(H-K+1)(W-K+1)
         sum_y = F.conv2d(y, weight=mean_kernel)
@@ -205,20 +214,21 @@ class SiFinder(nn.Module):
         sum_of_y_square = F.conv2d(y_square, weight=mean_kernel)
 
         ##################
-        ################## sum_xy
+        # sum_xy
         # 1P(H-K+1)(W-K+1)
         sum_xy = F.conv2d(y, weight=x_patches)
 
-        ################## patch_size
+        # patch_size
         patch_size = x_patches.shape[-1] * x_patches.shape[-2]
-        ################## numerator
+        # numerator
         numerator = sum_xy - mean_x * sum_y
         ##################
-        ################## denominator
-        denominator_x = torch.sqrt(sum_of_x_square - patch_size * mean_x * mean_x)
-        denominator_y = torch.sqrt(sum_of_y_square - sum_y * sum_y / patch_size)
+        # denominator
+        denominator_x = torch.sqrt(
+            sum_of_x_square - patch_size * mean_x * mean_x)
+        denominator_y = torch.sqrt(
+            sum_of_y_square - sum_y * sum_y / patch_size)
         denominator = denominator_x * denominator_y
         ##################
 
         return (numerator + SiFinder.CORR_SIGMA) / (denominator + SiFinder.CORR_SIGMA)
-
