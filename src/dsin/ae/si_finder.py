@@ -9,7 +9,8 @@ class SiFinder(nn.Module):
     INPUT_CHANNELS = 3
     CORR_SIGMA = 1e-6
 
-    def create_y_syn(self, x_dec: torch.Tensor, y_dec: torch.Tensor, y: torch.Tensor):
+    def create_y_syn(self, x_dec: torch.Tensor, y_dec: torch.Tensor,
+                     y: torch.Tensor, device=None):
         """
         create synthetic image from patches in y.
         Let patch is places in index A inside y_syn,
@@ -35,18 +36,33 @@ class SiFinder(nn.Module):
         # batch.
         # the -0.5 offset is because roi_align refers to the center of the pixel
         # hence requirign a shift of 0.5-pixel-length.
-        boxes = torch.tensor(
-            [
+        if device is None and torch.cuda.is_available():
+            boxes = torch.tensor(
                 [
-                    0,
-                    -0.5 + offset_w,
-                    -0.5 + offset_h,
-                    -0.5 + offset_w + patch_w,
-                    -0.5 + offset_h + patch_h,
+                    [
+                        0,
+                        -0.5 + offset_w,
+                        -0.5 + offset_h,
+                        -0.5 + offset_w + patch_w,
+                        -0.5 + offset_h + patch_h,
+                    ]
+                    for (offset_h, offset_w) in patch_offsets_in_y_dec
                 ]
-                for (offset_h, offset_w) in patch_offsets_in_y_dec
-            ]
-        )
+            ).cuda()
+
+        else:
+            boxes = torch.tensor(
+                [
+                    [
+                        0,
+                        -0.5 + offset_w,
+                        -0.5 + offset_h,
+                        -0.5 + offset_w + patch_w,
+                        -0.5 + offset_h + patch_h,
+                    ]
+                    for (offset_h, offset_w) in patch_offsets_in_y_dec
+                ]
+            )
 
         # PCKK
         y_patches = roi_align(
