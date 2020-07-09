@@ -12,11 +12,16 @@ class MinMaxMap(torch.autograd.Function):
         to stash information for backward computation.
         """
         ctx.save_for_backward(x)
-        t_one = torch.tensor(1.0, dtype=torch.float32, requires_grad=False)
-        t_zero = torch.tensor(0.0, dtype=torch.float32, requires_grad=False)
+
         if device is None and torch.cuda.is_available():
-            t_one.cuda()
-            t_zero.cuda()
+            t_one = torch.tensor(1.0, dtype=torch.float32,
+                                 requires_grad=False).cuda()
+            t_zero = torch.tensor(0.0, dtype=torch.float32,
+                                  requires_grad=False).cuda()
+        else:
+            t_one = torch.tensor(1.0, dtype=torch.float32, requires_grad=False)
+            t_zero = torch.tensor(
+                0.0, dtype=torch.float32, requires_grad=False)
 
         return torch.max(torch.min(x, t_one), t_zero)  # NCHW
 
