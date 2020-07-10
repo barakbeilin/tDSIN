@@ -29,18 +29,6 @@ class SegmentationProcessor(PreProcessor):
         self.classes)
 
 
-class PoopException(Exception):
-    pass
-
-
-class TargetSiList(ItemList):
-    def reconstruct(self, t: Tensor):
-        raise
-        if len(t.size()) == 0:
-            return t
-        return ImageSiTuple(Image(t[0]), Image(t[1]))
-
-
 class SideinformationImageImageList(ImageList):
     _label_cls = ImageList
 
@@ -117,3 +105,5 @@ class SideinformationImageImageList(ImageList):
         for i, (x, z) in enumerate(zip(xs, zs)):
             x.to_one().show(ax=axs[i, 0], **kwargs)
             z.show(ax=axs[i, 1], **kwargs)
+
+
