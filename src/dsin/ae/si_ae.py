@@ -93,13 +93,17 @@ class SideInformationAutoEncoder(nn.Module):
         else:
             x_reconstructed = None
 
-        return (
-            x_reconstructed,  # for total loss
-            x_dec,  # for auto-encoder loss
-            x_pc,  # for probability classifier loss
-            importance_map_mult_weights,  # for probability classifier loss
-            x_quantizer_index_of_closest_center,  # for probability classifier loss
-        )
+        if self.training:
+            return (
+                x_reconstructed,  # for total loss
+                x_dec,  # for auto-encoder loss
+                x_pc,  # for probability classifier loss
+                importance_map_mult_weights,  # for probability classifier loss
+                x_quantizer_index_of_closest_center,  # for probability classifier loss
+            )
+        if self.use_side_infomation == SiNetChannelIn.WithSideInformation:
+            return x_reconstructed
+        return x_dec
 
     def calc_y_syn(self, y, normalized_x_dec):
 
