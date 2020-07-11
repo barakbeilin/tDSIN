@@ -99,7 +99,6 @@ class SideinformationImageImageList(ImageList):
         fig, axs = plt.subplots(len(xs), 2, figsize=figsize)
         fig.suptitle('Ground truth / Predictions', weight='bold', size=14)
         if len(axs.shape) == 1:
-            import pdb; pdb.set_trace()
             xs[0].to_one().show(ax=axs[0], **kwargs)
             zs[0].show(ax=axs[1], **kwargs)
             return
