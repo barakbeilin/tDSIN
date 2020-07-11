@@ -105,5 +105,3 @@ class SideinformationImageImageList(ImageList):
         for i, (x, z) in enumerate(zip(xs, zs)):
             x.to_one().show(ax=axs[i, 0], **kwargs)
             z.show(ax=axs[i, 1], **kwargs)
-
-

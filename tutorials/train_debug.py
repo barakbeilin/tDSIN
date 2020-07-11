@@ -41,10 +41,17 @@ class AverageMetric(Callback):
 
 def main():
     si_autoencoder = SideInformationAutoEncoder(config.use_si_flag)
-    image_list = SideinformationImageImageList.from_csv(
-        path="../src/dsin/data", csv_names=["tiny_KITTI_stereo_train.txt", "tiny_KITTI_stereo_val.txt"])
-    ll = image_list.split_by_valid_func(
-        lambda x: 'testing' in x).label_from_func(lambda x: x)
+    path = "../src/dsin/data"
+    valid_image_list = SideinformationImageImageList.from_csv(
+        path=path, csv_names=["tiny_KITTI_stereo_val.txt"])
+    train_image_list = SideinformationImageImageList.from_csv(
+        path=path, csv_names=["tiny_KITTI_stereo_train.txt"])
+
+    image_lists = ItemLists(
+        path=path, train=train_image_list, valid=valid_image_list)
+
+    ll = image_lists.label_from_func(lambda x: x)
+    
     batchsize = 1
     data = (image_list
             .split_by_valid_func(lambda x: 'testing' in x)
@@ -58,8 +65,7 @@ def main():
                          metrics=[AverageMetric(Distortions._calc_dist)])
     my_learner.load('tiny-1')
     datum = my_learner.data.train_ds[0][0]
-    
-    
+
     # my_learner.predict(datum)
     my_learner.show_results()
 

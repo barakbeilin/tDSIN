@@ -16,7 +16,7 @@ class SideInformationAutoEncoder(nn.Module):
         self.use_side_infomation = use_side_infomation
         self.enc = Encoder.create_module_from_const()
         self.dec = Decoder.create_module_from_const()
-
+        self.true_tuple_loss_false_just_out = True
         self.importance_map_layer = ImportanceMapMult(
             use_map=True, info_channels=config.quantizer_num_of_channels
         )
@@ -93,7 +93,7 @@ class SideInformationAutoEncoder(nn.Module):
         else:
             x_reconstructed = None
 
-        if self.training:
+        if self.true_tuple_loss_false_just_out:
             return (
                 x_reconstructed,  # for total loss
                 x_dec,  # for auto-encoder loss
