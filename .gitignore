@@ -2,3 +2,7 @@
 src/tDSIN.egg-info/*
 *.pyc
 *.pkl
+*.png
+src/dsin/data/data_scene_flow_multiview/testing
+src/dsin/data/data_scene_flow_multiview/training
+
