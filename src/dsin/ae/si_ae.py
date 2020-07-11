@@ -103,7 +103,7 @@ class SideInformationAutoEncoder(nn.Module):
             )
         if self.use_side_infomation == SiNetChannelIn.WithSideInformation:
             return x_reconstructed
-        return x_dec
+        return x_dec / 255.0
 
     def calc_y_syn(self, y, normalized_x_dec):
 
