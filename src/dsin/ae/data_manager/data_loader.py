@@ -98,10 +98,11 @@ class SideinformationImageImageList(ImageList):
         figsize = ifnone(figsize, (12, 3*len(xs)))
         fig, axs = plt.subplots(len(xs), 2, figsize=figsize)
         fig.suptitle('Ground truth / Predictions', weight='bold', size=14)
+        sub_figsize = (figsize[0]//3, figsize[1])
         if len(axs.shape) == 1:
-            xs[0].to_one().show(ax=axs[0], **kwargs)
-            zs[0].show(ax=axs[1], **kwargs)
+            xs[0].to_one().show(ax=axs[0], figsize=sub_figsize, **kwargs)
+            zs[0].show(ax=axs[1], figsize=sub_figsize, **kwargs)
             return
         for i, (x, z) in enumerate(zip(xs, zs)):
-            x.to_one().show(ax=axs[i, 0], **kwargs)
-            z.show(ax=axs[i, 1], **kwargs)
+            x.to_one().show(ax=axs[i, 0], figsize=sub_figsize, **kwargs)
+            z.show(ax=axs[i, 1], figsize=sub_figsize, **kwargs)
