@@ -99,5 +99,6 @@ class Distortions:
             loss = PSNRLoss()
         if distortion == DistTypes.MS_SSMIM:
             loss = ms_ssim
+            return 5000*(1 - loss(x_l, target_l))
 
         return loss(x_l, target_l)
