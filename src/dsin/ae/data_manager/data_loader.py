@@ -20,7 +20,7 @@ class ImageSiTuple(ItemBase):
 
     def to_one(self):
         # return Image(0.5+torch.cat(self.data,2)/2)
-        return Image(torch.cat(self.data, 2))
+        return Image(torch.cat(self.data, 1))
 
 
 class SegmentationProcessor(PreProcessor):
@@ -96,7 +96,7 @@ class SideinformationImageImageList(ImageList):
         """Show `xs` (inputs), `ys` (targets) and `zs` (predictions) on a figure of `figsize`.
         `kwargs` are passed to the show method."""
         figsize = ifnone(figsize, (12, 3*len(xs)))
-        fig, axs = plt.subplots(len(xs), 2, figsize=figsize)
+        fig, axs = plt.subplots(2,len(xs), figsize=figsize)
         fig.suptitle('Ground truth / Predictions', weight='bold', size=14)
         sub_figsize = (figsize[0]//3, figsize[1])
         if len(axs.shape) == 1:
@@ -104,5 +104,5 @@ class SideinformationImageImageList(ImageList):
             zs[0].show(ax=axs[1], figsize=sub_figsize, **kwargs)
             return
         for i, (x, z) in enumerate(zip(xs, zs)):
-            x.to_one().show(ax=axs[i, 0], figsize=sub_figsize, **kwargs)
-            z.show(ax=axs[i, 1], figsize=sub_figsize, **kwargs)
+            x.to_one().show(ax=axs[0, i], figsize=sub_figsize, **kwargs)
+            z.show(ax=axs[0, i], figsize=sub_figsize, **kwargs)
