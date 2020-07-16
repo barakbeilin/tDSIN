@@ -95,6 +95,8 @@ class SideinformationImageImageList(ImageList):
     def show_xyzs(self, xs, ys, zs, figsize: Tuple[int, int] = None, **kwargs):
         """Show `xs` (inputs), `ys` (targets) and `zs` (predictions) on a figure of `figsize`.
         `kwargs` are passed to the show method."""
+        import pdb
+        pdb.set_trace()
         figsize = ifnone(figsize, (12, 3*len(xs)))
         fig, axs = plt.subplots(2,len(xs), figsize=figsize)
         fig.suptitle('Ground truth / Predictions', weight='bold', size=14)
