@@ -9,7 +9,7 @@ class ImageSiTuple(ItemBase):
         self._update_data()
 
     def _update_data(self):
-        #self.data =[-1+2*self.img.data,-1+2*self.si_img.data]
+        # self.data =[-1+2*self.img.data,-1+2*self.si_img.data]
         self.data = [self.img.data, self.si_img.data]
 
     def apply_tfms(self, tfms, **kwargs):
@@ -44,10 +44,6 @@ class SideinformationImageImageList(ImageList):
         self.si_items = si_items
         self.copy_new.append('si_items')
 
-    def after_open(self, img):
-        img.px = img.px[:, 295:295+77, 262:252+94]
-        return img
-
     def get(self, i):
         # get an image, opened by self.open()
         img = super().get(i)
@@ -56,7 +52,7 @@ class SideinformationImageImageList(ImageList):
 
     def open(self, fn):
         "Open image in `fn`, subclass and overwrite for custom behavior."
-        return open_image(fn, div=True, convert_mode=self.convert_mode, after_open=self.after_open)
+        return open_image(fn, div=True, convert_mode=self.convert_mode)
 
     def reconstruct(self, t):
         # def reconstruct(self, t, x):
@@ -68,7 +64,9 @@ class SideinformationImageImageList(ImageList):
         return ImageSiTuple(Image(t[0]), Image(t[1]))
 
     @classmethod
-    def from_csv(cls, path: PathOrStr, csv_names: List, header: str = None, delimiter: str = '\n', **kwargs) -> 'SideinformationImageImageList':
+    def from_csv(cls, path: PathOrStr, csv_names: List, header: str = None,
+                 delimiter: str = '\n', pct: float = 1.0,
+                 **kwargs) -> 'SideinformationImageImageList':
         """
         Get the filenames in `path/csv_name` for each csv_name in csv_names.
         csv file opened with `header` with delimiter.
@@ -77,8 +75,13 @@ class SideinformationImageImageList(ImageList):
         dfs = [pd.read_csv(path/csv_name, header=None, delimiter=delimiter)
                for csv_name in csv_names]
         df = pd.concat(dfs, ignore_index=True)
+
+        # keep precentage of number of items, so that the list of items is even
+        n_items = max(round(len(df) * pct), 2)
+        n_items = n_items if n_items % 2 == 0 else n_items - 1
+
         # image path's are intermittent
-        img_df, si_img_df = df.iloc[1::2], df.iloc[0::2]
+        img_df, si_img_df = df.iloc[1:n_items:2], df.iloc[0:n_items:2]
 
         si_items = ImageList.from_df(path=path, df=si_img_df, **kwargs).items
         res = super().from_df(path=path, df=img_df, si_items=si_items, **kwargs)
@@ -98,7 +101,7 @@ class SideinformationImageImageList(ImageList):
         import pdb
         pdb.set_trace()
         figsize = ifnone(figsize, (12, 3*len(xs)))
-        fig, axs = plt.subplots(2,len(xs), figsize=figsize)
+        fig, axs = plt.subplots(2, len(xs), figsize=figsize)
         fig.suptitle('Ground truth / Predictions', weight='bold', size=14)
         sub_figsize = (figsize[0]//3, figsize[1])
         if len(axs.shape) == 1:
