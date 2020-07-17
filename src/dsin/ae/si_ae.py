@@ -36,7 +36,7 @@ class SideInformationAutoEncoder(nn.Module):
         )
 
         self.si_net = SiNet(
-            in_channels=self.use_side_infomation, use_eye_init=True)
+            in_channels=SiNetChannelIn.WithSideInformation, use_eye_init=True)
 
         self.si_finder = SiFinder()
 
@@ -48,6 +48,7 @@ class SideInformationAutoEncoder(nn.Module):
     def forward(self, x: torch.tensor, y: torch.tensor):
         # N| nof inpput Quantization Channels + 1|H/8|W/8
         # TODO: DELETE AND PASS INTO importance_map_layer DIRECTLY
+       
         x_enc = self.enc(x * config.open_image_normalization)
 
         # improtance map - N|nof input quantization channels|H/8|W/8
@@ -74,18 +75,17 @@ class SideInformationAutoEncoder(nn.Module):
 
         if self.use_side_infomation == SiNetChannelIn.WithSideInformation:
             normalized_x_dec = self.noramlize(x_dec)
-            y = y * config.open_image_normalization
             # N|3|H|W
             # TODO: DELETE AND PASS INTO cat DIRECTLY
             normalized_y_syn = self.noramlize(
-                self.calc_y_syn(y=y, normalized_x_dec=normalized_x_dec)
+                self.calc_y_syn(y= y * config.open_image_normalization,
+                 normalized_x_dec=normalized_x_dec)
             )
 
             # N|6|H|W, concat on channel dim
             # TODO: DELETE AND PASS INTO SI_NET DIRECTLY
             normalized_x_dec_y_syn = torch.cat(
-                (normalized_x_dec, normalized_y_syn), dim=1
-            )
+                (normalized_x_dec, normalized_y_syn), dim=1)
 
             # N|3|H|W
             x_reconstructed = self.denoramlize(
@@ -102,8 +102,8 @@ class SideInformationAutoEncoder(nn.Module):
                 x_quantizer_index_of_closest_center,  # for probability classifier loss
             )
         if self.use_side_infomation == SiNetChannelIn.WithSideInformation:
-            return x_reconstructed
-        return x_dec / 255.0
+            return x_reconstructed / config.open_image_normalization
+        return x_dec / config.open_image_normalization
 
     def calc_y_syn(self, y, normalized_x_dec):
 
