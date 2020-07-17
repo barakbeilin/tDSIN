@@ -48,8 +48,7 @@ class SideInformationAutoEncoder(nn.Module):
     def forward(self, x: torch.tensor, y: torch.tensor):
         # N| nof inpput Quantization Channels + 1|H/8|W/8
         # TODO: DELETE AND PASS INTO importance_map_layer DIRECTLY
-        import pdb
-        pdb.set_trace()
+       
         x_enc = self.enc(x * config.open_image_normalization)
 
         # improtance map - N|nof input quantization channels|H/8|W/8
