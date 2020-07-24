@@ -26,8 +26,9 @@ class LossManager(nn.Module):
          x_quantizer_index_of_closest_center) = args[0]
 
         x_orig = args[1] * config.open_image_normalization
-
-        bit_cost_loss_value = self._get_bit_cost_loss(
+       
+       
+        self.bit_cost_loss_value = self._get_bit_cost_loss(
             pc_output=x_pc,
             quantizer_closest_center_index=x_quantizer_index_of_closest_center,
             importance_map_mult_weights=importance_map_mult_weights,
@@ -35,22 +36,22 @@ class LossManager(nn.Module):
             target_bit_cost=config.H_target,
         )
 
-        si_net_loss_value = (
+        self.si_net_loss_value = (
             self.si_net_loss(x_reconstructed, x_orig)
             if self.use_side_infomation == SiNetChannelIn.WithSideInformation
             else 0
         )
 
-        autoencoder_loss_value = Distortions._calc_dist(
+        self.autoencoder_loss_value = Distortions._calc_dist(
             x_dec,
             x_orig,
             distortion=config.autoencoder_loss_distortion_to_minimize,
             cast_to_int=False,
         )
         total_loss = (
-            autoencoder_loss_value * (1 - config.si_loss_weight_alpha)
-            + si_net_loss_value * config.si_loss_weight_alpha
-            + bit_cost_loss_value
+            self.autoencoder_loss_value * (1 - config.si_loss_weight_alpha)
+            + self.si_net_loss_value * config.si_loss_weight_alpha
+            + self.bit_cost_loss_value
         )
         return total_loss
 
@@ -88,7 +89,7 @@ class LossManager(nn.Module):
         )
         mean_masked_bit_entropy = torch.mean(self.masked_bit_entropy)
 
-        soft_bit_entropy = 0.5 * \
+        self.soft_bit_entropy = 0.5 * \
             (mean_masked_bit_entropy + mean_real_bit_entropy)
 
         if device is None and torch.cuda.is_available():
@@ -98,4 +99,4 @@ class LossManager(nn.Module):
             t_zero = torch.tensor(
                 0.0, dtype=torch.float32, requires_grad=False)
 
-        return beta_factor * torch.max(soft_bit_entropy - target_bit_cost, t_zero)
+        return beta_factor * torch.max(self.soft_bit_entropy - target_bit_cost, t_zero)

@@ -11,7 +11,7 @@ from dsin.ae.kitti_normalizer import ChangeImageStatsToKitti, ChangeState
 
 
 class SideInformationAutoEncoder(nn.Module):
-    def __init__(self, use_side_infomation: SiNetChannelIn):
+    def __init__(self, use_side_infomation: SiNetChannelIn, controller_return=None):
         super().__init__()
         self.use_side_infomation = use_side_infomation
         self.enc = Encoder.create_module_from_const()
@@ -71,15 +71,14 @@ class SideInformationAutoEncoder(nn.Module):
 
         # N|3|H|W
         x_dec = self.dec(x_quantizer_soft)
-
+        y_syn = normalized_y_syn = None
         if self.use_side_infomation == SiNetChannelIn.WithSideInformation:
             normalized_x_dec = self.noramlize(x_dec)
             # N|3|H|W
             # TODO: DELETE AND PASS INTO cat DIRECTLY
-            normalized_y_syn = self.noramlize(
-                self.calc_y_syn(y= y * config.open_image_normalization,
+            y_syn = self.calc_y_syn(y= y * config.open_image_normalization,
                  normalized_x_dec=normalized_x_dec)
-            )
+            normalized_y_syn = self.noramlize(y_syn)
 
             # N|6|H|W, concat on channel dim
             # TODO: DELETE AND PASS INTO SI_NET DIRECTLY
@@ -87,11 +86,17 @@ class SideInformationAutoEncoder(nn.Module):
                 (normalized_x_dec, normalized_y_syn), dim=1)
 
             # N|3|H|W
-            x_reconstructed = self.denoramlize(
-                self.si_net(normalized_x_dec_y_syn))
+            x_reconstructed = self.si_net(normalized_x_dec_y_syn)
         else:
             x_reconstructed = None
-
+        self.my_tuple = (y_syn,
+                normalized_y_syn,
+                x_reconstructed,  # for total loss
+                x_dec,  # for auto-encoder loss
+                x_pc,  # for probability classifier loss
+                importance_map_mult_weights,  # for probability classifier loss
+                x_quantizer_index_of_closest_center,  # for probability classifier loss
+            )
         if self.true_tuple_loss_false_just_out:
             return (
                 x_reconstructed,  # for total loss
