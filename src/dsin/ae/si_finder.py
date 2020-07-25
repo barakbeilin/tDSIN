@@ -208,7 +208,6 @@ class SiFinder(nn.Module):
 
         ##################
         ################## sum_y, sum_of_y_square
-        y_square = y ** 2
 
         if device is None and torch.cuda.is_available():
             # kernel of dims PCKK will lead to output 1P(H-K+1)(W-K+1) with y as input
@@ -226,23 +225,34 @@ class SiFinder(nn.Module):
         sum_y = F.conv2d(y, weight=mean_kernel)
 
         # dim - 1P(H-K+1)(W-K+1)
-        sum_of_y_square = F.conv2d(y_square, weight=mean_kernel)
+        # sum_of_y_square = F.conv2d(y ** 2, weight=mean_kernel)
 
         ##################
-        # sum_xy
         # 1P(H-K+1)(W-K+1)
-        sum_xy = F.conv2d(y, weight=x_patches)
+        # sum_xy = F.conv2d(y, weight=x_patches)
 
         # patch_size
         patch_size = x_patches.shape[-1] * x_patches.shape[-2] * x_patches.shape[-3] 
         # numerator
-        numerator = sum_xy/patch_size- mean_x * sum_y/patch_size
+        numerator = F.conv2d(y, weight=x_patches)/patch_size- mean_x * sum_y/patch_size
         ##################
         # denominator
       
         denominator_x = torch.sqrt(sum_of_x_square/patch_size - mean_x * mean_x)
-        denominator_y = torch.sqrt(sum_of_y_square/patch_size - sum_y * sum_y / (patch_size ** 2))
-        denominator = denominator_x * denominator_y
+
+        ##########
+        # denominator_y = torch.sqrt(sum_of_y_square/patch_size - sum_y * sum_y / (patch_size ** 2))
+        denominator_y = torch.sqrt(F.conv2d(y ** 2, weight=mean_kernel)/patch_size - sum_y * sum_y / (patch_size ** 2))
+        ##########
+        # denominator = denominator_x * denominator_y
         ##################
        
-        return (numerator + SiFinder.CORR_SIGMA) / (denominator + SiFinder.CORR_SIGMA)
+        # s_coeff = (numerator + SiFinder.CORR_SIGMA) / (denominator + SiFinder.CORR_SIGMA)
+        # l_coeff = ( 2 * sum_y * mean_x/patch_size  + SiFinder.CORR_SIGMA)/( sum_y * sum_y/(patch_size**2) + mean_x ** 2 + SiFinder.CORR_SIGMA)
+        # c_coeff = (2 * numerator + SiFinder.CORR_SIGMA)/ (denominator_x** 2 +denominator_y**2 +  + SiFinder.CORR_SIGMA)
+        # import pdb
+        # pdb.set_trace()
+        return  (((2 * numerator + SiFinder.CORR_SIGMA)/ (denominator_x** 2 +denominator_y**2 +  + SiFinder.CORR_SIGMA)) * 
+        (( 2 * sum_y * mean_x/patch_size  + SiFinder.CORR_SIGMA)/( sum_y * sum_y/(patch_size**2) + mean_x ** 2 + SiFinder.CORR_SIGMA)))
+
+
