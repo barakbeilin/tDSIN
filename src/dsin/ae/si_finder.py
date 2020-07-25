@@ -234,16 +234,15 @@ class SiFinder(nn.Module):
         sum_xy = F.conv2d(y, weight=x_patches)
 
         # patch_size
-        patch_size = x_patches.shape[-1] * x_patches.shape[-2]
+        patch_size = x_patches.shape[-1] * x_patches.shape[-2] * x_patches.shape[-3] 
         # numerator
-        numerator = sum_xy - mean_x * sum_y
+        numerator = sum_xy/patch_size- mean_x * sum_y/patch_size
         ##################
         # denominator
-        denominator_x = torch.sqrt(
-            sum_of_x_square - patch_size * mean_x * mean_x)
-        denominator_y = torch.sqrt(
-            sum_of_y_square - sum_y * sum_y / patch_size)
+      
+        denominator_x = torch.sqrt(sum_of_x_square/patch_size - mean_x * mean_x)
+        denominator_y = torch.sqrt(sum_of_y_square/patch_size - sum_y * sum_y / (patch_size ** 2))
         denominator = denominator_x * denominator_y
         ##################
-
+       
         return (numerator + SiFinder.CORR_SIGMA) / (denominator + SiFinder.CORR_SIGMA)

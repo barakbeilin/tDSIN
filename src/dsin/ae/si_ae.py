@@ -96,6 +96,8 @@ class SideInformationAutoEncoder(nn.Module):
                 x_pc,  # for probability classifier loss
                 importance_map_mult_weights,  # for probability classifier loss
                 x_quantizer_index_of_closest_center,  # for probability classifier loss
+                x,
+                y
             )
         if self.true_tuple_loss_false_just_out:
             return (
