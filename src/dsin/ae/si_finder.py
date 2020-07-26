@@ -250,9 +250,10 @@ class SiFinder(nn.Module):
         # s_coeff = (numerator + SiFinder.CORR_SIGMA) / (denominator + SiFinder.CORR_SIGMA)
         # l_coeff = ( 2 * sum_y * mean_x/patch_size  + SiFinder.CORR_SIGMA)/( sum_y * sum_y/(patch_size**2) + mean_x ** 2 + SiFinder.CORR_SIGMA)
         # c_coeff = (2 * numerator + SiFinder.CORR_SIGMA)/ (denominator_x** 2 +denominator_y**2 +  + SiFinder.CORR_SIGMA)
+        return (2 * numerator + SiFinder.CORR_SIGMA)/ (denominator_x** 2 +denominator_y**2 +  + SiFinder.CORR_SIGMA)
         # import pdb
         # pdb.set_trace()
-        return  (((2 * numerator + SiFinder.CORR_SIGMA)/ (denominator_x** 2 +denominator_y**2 +  + SiFinder.CORR_SIGMA)) * 
-        (( 2 * sum_y * mean_x/patch_size  + SiFinder.CORR_SIGMA)/( sum_y * sum_y/(patch_size**2) + mean_x ** 2 + SiFinder.CORR_SIGMA)))
+        # return  (((2 * numerator + SiFinder.CORR_SIGMA)/ (denominator_x** 2 +denominator_y**2 +  + SiFinder.CORR_SIGMA)) * 
+        # (( 2 * sum_y * mean_x/patch_size  + SiFinder.CORR_SIGMA)/( sum_y * sum_y/(patch_size**2) + mean_x ** 2 + SiFinder.CORR_SIGMA)))
 
 
