@@ -1,2 +1,2 @@
 Requries - ```pip install pytorch-msssim```
-Based on Tensorflow project DSIN
+Based on Tensorflow project DSIN.
