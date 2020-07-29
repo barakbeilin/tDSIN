@@ -17,4 +17,4 @@ si_loss_weight_alpha = 0.7
 open_image_normalization = 255.0
 l2_reg_coeff = 0.005
 
-K_MS_SSIM = 5000
+K_MS_SSIM = 500
