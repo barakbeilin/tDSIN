@@ -29,7 +29,7 @@ class Distortions:
         distortion_to_minimize: DistTypes,
         is_training: bool,
     ):
-        self.K_MS_SSIM = 5000
+        self.K_MS_SSIM = config.K_MS_SSIM
         self.K_PSNR = 100
         self.distortion_to_minimize = distortion_to_minimize
 
