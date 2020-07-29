@@ -81,7 +81,7 @@ class SideinformationImageImageList(ImageList):
         n_items = n_items if n_items % 2 == 0 else n_items - 1
 
         # image path's are intermittent
-        img_df, si_img_df = df.iloc[1:n_items:2], df.iloc[0:n_items:2]
+        si_img_df, img_df  = df.iloc[1:n_items:2], df.iloc[0:n_items:2]
 
         si_items = ImageList.from_df(path=path, df=si_img_df, **kwargs).items
         res = super().from_df(path=path, df=img_df, si_items=si_items, **kwargs)
