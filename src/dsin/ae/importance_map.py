@@ -54,6 +54,7 @@ class ImportanceMapMult(nn.Module):
         cl_param = torch.arange(
             start=0, end=self.info_channels, dtype=torch.float32)
         cl_param = torch.reshape(cl_param, (self.info_channels, 1, 1))
+        cl_param.unsqueeze_(0)
         self.register_buffer("cl_param", cl_param)
 
     def forward(self, x):
@@ -82,7 +83,6 @@ class ImportanceMapMult(nn.Module):
         z = x[:, MAP_CHANNEL + 1:, ...]
 
         diff = importance_map - self.cl_param
-
         out_map = MinMaxMap.apply(diff)
 
         return out_map, torch.mul(out_map, z)

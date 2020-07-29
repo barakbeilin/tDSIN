@@ -2,7 +2,7 @@ import torch
 from torch import nn
 from enum import Enum
 from pytorch_msssim import ms_ssim
-
+from dsin.ae import config
 """https://discuss.pytorch.org/t/use-model-parameters-in-loss-function/17305"""
 
 
@@ -99,6 +99,6 @@ class Distortions:
             loss = PSNRLoss()
         if distortion == DistTypes.MS_SSMIM:
             loss = ms_ssim
-            return 5000*(1 - loss(x_l, target_l))
+            return config.K_MS_SSIM *(1 - loss(x_l, target_l))
 
         return loss(x_l, target_l)
