@@ -100,12 +100,15 @@ class SideInformationAutoEncoder(nn.Module):
                 y
             )
         if self.true_tuple_loss_false_just_out:
-            return (
-                x_reconstructed,  # for total loss
+            l2_weights = 0
+            for p in self.parameters():
+                l2_weights += (p ** 2).sum()
+            return (x_reconstructed,  # for total loss
                 x_dec,  # for auto-encoder loss
                 x_pc,  # for probability classifier loss
                 importance_map_mult_weights,  # for probability classifier loss
                 x_quantizer_index_of_closest_center,  # for probability classifier loss
+                l2_weights,
             )
         if self.use_side_infomation == SiNetChannelIn.WithSideInformation:
             return x_reconstructed / config.open_image_normalization

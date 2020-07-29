@@ -23,7 +23,8 @@ class LossManager(nn.Module):
          x_dec,
          x_pc,
          importance_map_mult_weights,
-         x_quantizer_index_of_closest_center) = args[0]
+         x_quantizer_index_of_closest_center,
+         l2_weights) = args[0]
 
         x_orig = args[1] * config.open_image_normalization
        
