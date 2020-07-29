@@ -49,8 +49,8 @@ class LossManager(nn.Module):
             distortion=config.autoencoder_loss_distortion_to_minimize,
             cast_to_int=False,
         )
-        total_loss = (
-            self.autoencoder_loss_value * (1 - config.si_loss_weight_alpha)
+        total_loss = (l2_weights * config.l2_reg_coeff
+            + self.autoencoder_loss_value * (1 - config.si_loss_weight_alpha)
             + self.si_net_loss_value * config.si_loss_weight_alpha
             + self.bit_cost_loss_value
         )

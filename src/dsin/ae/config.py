@@ -15,3 +15,4 @@ autoencoder_loss_distortion_to_minimize = DistTypes.MAE
 si_loss_weight_alpha = 0.7
 
 open_image_normalization = 255.0
+l2_reg_coeff = 0.005
