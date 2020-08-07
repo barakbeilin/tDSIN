@@ -49,12 +49,13 @@ class LossManager(nn.Module):
             distortion=config.autoencoder_loss_distortion_to_minimize,
             cast_to_int=False,
         )
-        total_loss = (l2_weights * config.l2_reg_coeff
+        self.l2_reg_loss = l2_weights * config.l2_reg_coeff
+        self.total_loss = (self.l2_reg_loss
             + self.autoencoder_loss_value * (1 - config.si_loss_weight_alpha)
             + self.si_net_loss_value * config.si_loss_weight_alpha
             + self.bit_cost_loss_value
         )
-        return total_loss
+        return self.total_loss
 
     def _get_bit_cost_loss(
         self,
