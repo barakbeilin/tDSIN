@@ -50,10 +50,9 @@ class FeatureLoss(nn.Module):
 
         out_feat = self.make_features(target, clone=True)
         in_feat = self.make_features(input)
-        self.feat_losses = [base_loss(input,target)]
-        self.feat_losses += [base_loss(f_in, f_out)*w
+        self.feat_losses = [base_loss(f_in, f_out)*w
                              for f_in, f_out, w in zip(in_feat, out_feat, self.wgts)]
-        self.feat_losses += [base_loss(self.gram_matrix(f_in), self.gram_matrix(f_out))*w**2 * 5e3
+        self.feat_losses += [base_loss(self.gram_matrix(f_in), self.gram_matrix(f_out))*w**2 * 5e2
                              for f_in, f_out, w in zip(in_feat, out_feat, self.wgts)]
         self.metrics = dict(zip(self.metric_names, self.feat_losses))
         return sum(self.feat_losses)
@@ -65,14 +64,14 @@ class FeatureLoss(nn.Module):
 class LossManager(nn.Module):
     log_natural_base_to_base2_factor = np.log2(np.e)
 
-    def __init__(self, use_side_infomation: SiNetChannelIn):
+    def __init__(self, use_side_infomation: SiNetChannelIn, use_feat_loss = False):
         super().__init__()
         # don't average over batches, will happen after importance map mult.
         self.bit_cost_loss = nn.CrossEntropyLoss(reduction="none")
         self.si_net_loss = nn.L1Loss(reduction="mean")
         self.use_side_infomation = use_side_infomation
         self.feat_loss = FeatureLoss.create_loss()
-      
+        self.use_feat_loss = use_feat_loss
     def forward(self, *args):
         (x_reconstructed,
          x_dec,
@@ -94,7 +93,7 @@ class LossManager(nn.Module):
         
         if self.use_side_infomation == SiNetChannelIn.WithSideInformation:
             self.si_net_loss_value = self.si_net_loss(x_reconstructed, x_orig)
-            self.feat_loss_value = self.feat_loss(x_reconstructed, x_orig)
+            self.feat_loss_value = self.feat_loss(x_reconstructed, x_orig) if self.use_feat_loss  else 0 
         else:
             self.feat_loss_value = self.si_net_loss_value =  0 
         

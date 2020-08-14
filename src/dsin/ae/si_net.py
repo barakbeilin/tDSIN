@@ -8,7 +8,45 @@ class SiNetChannelIn(Enum):
     WithSideInformation = 6
     NoSideInformation = 3
 
+class DilatedResBlock(nn.Module):
+    def __init__(self, in_channels,out_channels,kernel_size,dilation,negative_slope):
+        super().__init__()
+        self.negative_slope = negative_slope
+        self.layers = [nn.Conv2d(
+                    in_channels=32,
+                    out_channels=32,
+                    kernel_size=[3, 3],
+                    dilation=dilation,
+                    padding_mode="replicate",
+                    padding=[dilation, dilation],
+                ),
+                nn.LeakyReLU(negative_slope=negative_slope),
+                nn.BatchNorm2d(out_channels,
+                            eps=1e-03,
+                            momentum=0.1,
+                            affine=True,
+                            track_running_stats=True,
+                        ),
+        ]
+        self._weight_init()
+        self.model = nn.Sequential(*self.layers)
 
+    def forward(self,x):
+        return self.model(x) + x
+
+    def _weight_init(self):
+        # kaiming uniform init
+        for layer in self.layers:
+            if type(layer) is nn.Conv2d:
+                weight = getattr(layer, "weight")
+                nn.init.kaiming_uniform_(
+                    weight,
+                    a=self.negative_slope,
+                    mode="fan_in",
+                    nonlinearity="leaky_relu",
+                )
+
+                
 class SiNet(nn.Module):
     NOF_INTERNAL_LAYERS = 7
     NEG_SLOPE = 0.2
@@ -17,21 +55,15 @@ class SiNet(nn.Module):
         super().__init__()
 
         internal_layers = [
-            (
-                nn.Conv2d(
+            DilatedResBlock(
                     in_channels=32,
                     out_channels=32,
                     kernel_size=[3, 3],
                     dilation=2 ** (i + 1),
-                    padding_mode="replicate",
-                    padding=[2 ** (i + 1), 2 ** (i + 1)],
-                ),
-                nn.LeakyReLU(negative_slope=self.NEG_SLOPE),
-            )
-            for i in range(self.NOF_INTERNAL_LAYERS)
-        ]
+                    negative_slope =self.NEG_SLOPE )
+            for i in range(self.NOF_INTERNAL_LAYERS)]
 
-        internal_layers = sum(internal_layers, ())
+        # internal_layers = sum(internal_layers, ())
         self.layers = [
             nn.Conv2d(
                 in_channels=in_channels.value,
@@ -41,6 +73,12 @@ class SiNet(nn.Module):
                 padding=[1, 1],
             ),
             nn.LeakyReLU(negative_slope=self.NEG_SLOPE),
+            nn.BatchNorm2d(32,
+                            eps=1e-03,
+                            momentum=0.1,
+                            affine=True,
+                            track_running_stats=True,
+                        ),
             *internal_layers,
             nn.Conv2d(in_channels=32, out_channels=3, kernel_size=[1, 1],),
             ChangeImageStatsToKitti(direction=ChangeState.DENORMALIZE),
@@ -62,7 +100,7 @@ class SiNet(nn.Module):
         else:
             # kaiming uniform init
             for layer in self.layers:
-                try:
+                if type(layer) is nn.Conv2d:
                     weight = getattr(layer, "weight")
                     nn.init.kaiming_uniform_(
                         weight,
@@ -70,8 +108,6 @@ class SiNet(nn.Module):
                         mode="fan_in",
                         nonlinearity="leaky_relu",
                     )
-                except AttributeError:
-                    pass
-
+               
     def forward(self, x):
         return self.model(x)
