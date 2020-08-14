@@ -32,8 +32,8 @@ class FeatureLoss(nn.Module):
               ] + [f'gram_{i}' for i in range(len(layer_ids))]
 
     @classmethod
-    def create_loss(cls):
-          if device is None and torch.cuda.is_available():
+    def create_loss(cls,device=None):
+        if device is None and torch.cuda.is_available():
             vgg_m = vgg16_bn(True).features.cuda().eval()
         else:
             vgg_m = vgg16_bn(True).features.eval()
@@ -109,6 +109,7 @@ class LossManager(nn.Module):
         self.total_loss = (self.l2_reg_loss
             + self.autoencoder_loss_value * (1 - config.si_loss_weight_alpha)
             + self.si_net_loss_value * config.si_loss_weight_alpha
+            + self.feat_loss_value
             + self.bit_cost_loss_value
         )
         return self.total_loss
