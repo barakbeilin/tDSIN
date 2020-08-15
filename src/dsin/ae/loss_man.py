@@ -3,20 +3,74 @@
 import torch
 from torch import nn
 import numpy as np
+
+import fastai
+from fastai.vision import *
+from fastai.callbacks import *
+from fastai.utils.mem import *
+
 from dsin.ae.distortions import Distortions
 from dsin.ae.si_net import SiNetChannelIn
 from dsin.ae import config
 
 
+class FeatureLoss(nn.Module):
+    @staticmethod
+    def gram_matrix(x):
+        n,c,h,w = x.size()
+        x = x.view(n, c, -1)
+        return (x @ x.transpose(1,2))/(c*h*w)
+
+    def __init__(self, m_feat, layer_ids, layer_wgts):
+        super().__init__()
+        self.m_feat = m_feat
+        self.loss_features = [self.m_feat[i] for i in layer_ids]
+        self.hooks = hook_outputs(self.loss_features, detach=False)
+        self.wgts = layer_wgts
+        self.metric_names = ['pixel',] + [f'feat_{i}' for i in range(len(layer_ids))
+              ] + [f'gram_{i}' for i in range(len(layer_ids))]
+
+    @classmethod
+    def create_loss(cls,device=None):
+        if device is None and torch.cuda.is_available():
+            vgg_m = vgg16_bn(True).features.cuda().eval()
+        else:
+            vgg_m = vgg16_bn(True).features.eval()
+        requires_grad(vgg_m, False)
+        return cls(vgg_m,[22, 32, 42],[5,15,2])
+
+
+    def make_features(self, x, clone=False):
+        self.m_feat(x)
+        return [(o.clone() if clone else o) for o in self.hooks.stored]
+    
+    def forward(self, input, target):
+        base_loss = F.l1_loss
+
+        out_feat = self.make_features(target, clone=True)
+        in_feat = self.make_features(input)
+        self.feat_losses = [base_loss(f_in, f_out)*w
+                             for f_in, f_out, w in zip(in_feat, out_feat, self.wgts)]
+        self.feat_losses += [base_loss(self.gram_matrix(f_in), self.gram_matrix(f_out))*w**2 * 5e2
+                             for f_in, f_out, w in zip(in_feat, out_feat, self.wgts)]
+        self.metrics = dict(zip(self.metric_names, self.feat_losses))
+        return sum(self.feat_losses)
+    
+    def __del__(self): self.hooks.remove()
+
+
 class LossManager(nn.Module):
     log_natural_base_to_base2_factor = np.log2(np.e)
 
-    def __init__(self, use_side_infomation: SiNetChannelIn):
+    def __init__(self, use_side_infomation: SiNetChannelIn, use_feat_loss = False):):
         super().__init__()
         # don't average over batches, will happen after importance map mult.
         self.bit_cost_loss = nn.CrossEntropyLoss(reduction="none")
         self.si_net_loss = nn.L1Loss(reduction="mean")
         self.use_side_infomation = use_side_infomation
+        self.feat_loss = FeatureLoss.create_loss()
+        self.use_feat_loss = use_feat_loss
+
 
     def forward(self, *args):
         (x_reconstructed,
