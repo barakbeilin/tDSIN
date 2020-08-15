@@ -33,14 +33,19 @@ class FeatureLoss(nn.Module):
         self.metric_names = ['pixel',] + [f'feat_{i}' for i in range(len(layer_ids))
               ] + [f'gram_{i}' for i in range(len(layer_ids))]
         self.noramlize = ChangeImageStatsToImagenet(direction=ChangeState.NORMALIZE)
+    
     @classmethod
     def create_loss(cls,device=None):
         if device is None and torch.cuda.is_available():
             vgg_m = vgg16_bn(True).features.cuda().eval()
+            loss = cls(vgg_m,[22, 32, 42],[5,15,2])
+            loss.noramlize.cuda()
         else:
             vgg_m = vgg16_bn(True).features.eval()
+            loss = cls(vgg_m,[22, 32, 42],[5,15,2])
         requires_grad(vgg_m, False)
-        return cls(vgg_m,[22, 32, 42],[5,15,2])
+
+        return loss
 
 
     def make_features(self, x, clone=False):
@@ -56,7 +61,7 @@ class FeatureLoss(nn.Module):
         in_feat = self.make_features(input)
         self.feat_losses = [base_loss(f_in, f_out)*w
                              for f_in, f_out, w in zip(in_feat, out_feat, self.wgts)]
-        self.feat_losses += [base_loss(self.gram_matrix(f_in), self.gram_matrix(f_out))*w**2 * 5e2
+        self.feat_losses += [base_loss(self.gram_matrix(f_in), self.gram_matrix(f_out))*w**2 * 5e3
                              for f_in, f_out, w in zip(in_feat, out_feat, self.wgts)]
         self.metrics = dict(zip(self.metric_names, self.feat_losses))
         return sum(self.feat_losses)
@@ -96,7 +101,7 @@ class LossManager(nn.Module):
             target_bit_cost=config.H_target,
         )
 
-        self.feat_loss_value = (self.feat_loss(x_reconstructed, x_orig) if 
+        self.feat_loss_value = 20 * (self.feat_loss(x_reconstructed, x_orig) if 
             self.use_feat_loss 
             and self.use_side_infomation == SiNetChannelIn.WithSideInformation
             else 0 )
