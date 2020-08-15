@@ -2,6 +2,8 @@
 
 import torch
 from torch import nn
+from torchvision.models import vgg16_bn
+
 import numpy as np
 
 import fastai
@@ -12,6 +14,7 @@ from fastai.utils.mem import *
 from dsin.ae.distortions import Distortions
 from dsin.ae.si_net import SiNetChannelIn
 from dsin.ae import config
+from dsin.ae.kitti_normalizer import ChangeImageStatsToImagenet, ChangeState
 
 
 class FeatureLoss(nn.Module):
@@ -29,7 +32,7 @@ class FeatureLoss(nn.Module):
         self.wgts = layer_wgts
         self.metric_names = ['pixel',] + [f'feat_{i}' for i in range(len(layer_ids))
               ] + [f'gram_{i}' for i in range(len(layer_ids))]
-
+        self.noramlize = ChangeImageStatsToImagenet(direction=ChangeState.NORMALIZE)
     @classmethod
     def create_loss(cls,device=None):
         if device is None and torch.cuda.is_available():
@@ -45,6 +48,8 @@ class FeatureLoss(nn.Module):
         return [(o.clone() if clone else o) for o in self.hooks.stored]
     
     def forward(self, input, target):
+        input,target = self.noramlize(input), self.noramlize(target)
+        
         base_loss = F.l1_loss
 
         out_feat = self.make_features(target, clone=True)
@@ -62,7 +67,7 @@ class FeatureLoss(nn.Module):
 class LossManager(nn.Module):
     log_natural_base_to_base2_factor = np.log2(np.e)
 
-    def __init__(self, use_side_infomation: SiNetChannelIn, use_feat_loss = False):):
+    def __init__(self, use_side_infomation: SiNetChannelIn, use_feat_loss = False):
         super().__init__()
         # don't average over batches, will happen after importance map mult.
         self.bit_cost_loss = nn.CrossEntropyLoss(reduction="none")
@@ -91,11 +96,17 @@ class LossManager(nn.Module):
             target_bit_cost=config.H_target,
         )
 
+        self.feat_loss_value = (self.feat_loss(x_reconstructed, x_orig) if 
+            self.use_feat_loss 
+            and self.use_side_infomation == SiNetChannelIn.WithSideInformation
+            else 0 )
+
         self.si_net_loss_value = (
             self.si_net_loss(x_reconstructed, x_orig)
             if self.use_side_infomation == SiNetChannelIn.WithSideInformation
             else 0
         )
+
 
         self.autoencoder_loss_value = Distortions._calc_dist(
             x_dec,
@@ -108,6 +119,7 @@ class LossManager(nn.Module):
             + self.autoencoder_loss_value * (1 - config.si_loss_weight_alpha)
             + self.si_net_loss_value * config.si_loss_weight_alpha
             + self.bit_cost_loss_value
+            + self.feat_loss_value
         )
         return self.total_loss
 
