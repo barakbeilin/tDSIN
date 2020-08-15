@@ -35,7 +35,7 @@ class SideInformationAutoEncoder(nn.Module):
             receptive_field=config.quantizer_kernel_w_h,
         )
 
-        self.si_net = SiNet(
+        self.res_si_net = SiNet(
             in_channels=SiNetChannelIn.WithSideInformation, use_eye_init=False)
 
         self.si_finder = SiFinder()
@@ -86,7 +86,7 @@ class SideInformationAutoEncoder(nn.Module):
                 (normalized_x_dec, normalized_y_syn), dim=1)
 
             # N|3|H|W
-            x_reconstructed = self.si_net(normalized_x_dec_y_syn)
+            x_reconstructed = self.res_si_net(normalized_x_dec_y_syn)
         else:
             x_reconstructed = None
         self.my_tuple = (y_syn,
