@@ -14,7 +14,7 @@ from fastai.utils.mem import *
 from dsin.ae.distortions import Distortions
 from dsin.ae.si_net import SiNetChannelIn
 from dsin.ae import config
-from dsin.ae.kitti_normalizer import ChangeImageStatsToImagenet, ChangeState
+from dsin.ae.kitti_normalizer import ChangeImageStatsToKitti, ChangeState
 
 
 class FeatureLoss(nn.Module):
@@ -32,7 +32,7 @@ class FeatureLoss(nn.Module):
         self.wgts = layer_wgts
         self.metric_names = ['pixel',] + [f'feat_{i}' for i in range(len(layer_ids))
               ] + [f'gram_{i}' for i in range(len(layer_ids))]
-        self.noramlize = ChangeImageStatsToImagenet(direction=ChangeState.NORMALIZE)
+        self.noramlize = ChangeImageStatsToKitti(direction=ChangeState.NORMALIZE)
     
     @classmethod
     def create_loss(cls,device=None):
@@ -53,7 +53,11 @@ class FeatureLoss(nn.Module):
         return [(o.clone() if clone else o) for o in self.hooks.stored]
     
     def forward(self, input, target):
-        input,target = self.noramlize(input), self.noramlize(target)
+        # input and target are concatenated between 0 and 1 
+        # input and target should after mult by 255 have kitti stats so we remove
+        # it by normalizing it.
+        input = self.noramlize(input * config.open_image_normalization)
+        target = self.noramlize(target * config.open_image_normalization)
         
         base_loss = F.l1_loss
 
@@ -90,7 +94,7 @@ class LossManager(nn.Module):
          x_quantizer_index_of_closest_center,
          l2_weights) = args[0]
 
-        x_orig = args[1] * config.open_image_normalization
+        x_orig = args[1]  # orig img with color levels between 0 and 1 
        
        
         self.bit_cost_loss_value = self._get_bit_cost_loss(

@@ -35,17 +35,15 @@ class SideInformationAutoEncoder(nn.Module):
        
         y_syn = normalized_y_syn = None
         
-        normalized_x_dec = self.ae.noramlize(x_dec)
+        
         # N|3|H|W
-        # TODO: DELETE AND PASS INTO cat DIRECTLY
+        # mult y by 255 before kitti normalization
         y_syn = self.calc_y_syn(y= y * config.open_image_normalization,
-                normalized_x_dec=normalized_x_dec)
+                x_dec=x_dec)
         normalized_y_syn = self.ae.noramlize(y_syn)
 
         # N|6|H|W, concat on channel dim
-        # TODO: DELETE AND PASS INTO SI_NET DIRECTLY
-        normalized_x_dec_y_syn = torch.cat(
-            (normalized_x_dec, normalized_y_syn), dim=1)
+        normalized_x_dec_y_syn = torch.cat((x_dec, normalized_y_syn), dim=1)
 
         # N|3|H|W
         x_reconstructed = self.si_net(normalized_x_dec_y_syn)
@@ -74,13 +72,13 @@ class SideInformationAutoEncoder(nn.Module):
        
         return x_reconstructed
 
-    def calc_y_syn(self, y, normalized_x_dec):
+    def calc_y_syn(self, y, x_dec):
 
         # stop gradients in si-finder and calculation of y_dec
         with torch.no_grad():
             _, y_post_map = self.ae.importance_map_layer(self.ae.enc(y))
             y_quantizer_soft, _, _ = self.ae.quantizer(y_post_map)
-            normalized_y_dec = self.ae.noramlize(self.ae.dec(y_quantizer_soft))
+            y_dec = self.ae.dec(y_quantizer_soft)
 
             # y_syn N|3|H|W
-            return self.si_finder.create_y_syn(x_dec=normalized_x_dec, y_dec=normalized_y_dec, y=y)
+            return self.si_finder.create_y_syn(x_dec=x_dec, y_dec=y_dec, y=y)

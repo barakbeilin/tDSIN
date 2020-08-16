@@ -3,7 +3,6 @@ import torch
 from torch import nn
 from enum import Enum
 
-
 class ChangeState(Enum):
     NORMALIZE = 0
     DENORMALIZE = 1
@@ -25,6 +24,7 @@ class ChangeImageStatsToKitti(nn.Module):
 
         self.register_buffer("mean", mean)
         self.register_buffer("var", var)
+        self.sigmoid = nn.Sigmoid()
 
     def forward(self, x):
         if self.direction == ChangeState.NORMALIZE:
@@ -42,7 +42,7 @@ class ChangeImageStatsToKitti(nn.Module):
 
     def _denormalize(self, x):
         
-        return (x * torch.sqrt(self.var + self.SIGMA_MIN)) + self.mean
+        return self.sigmoid(x)
 
     @staticmethod
     def _get_stats(channel_repeat_factor: int):
@@ -87,6 +87,7 @@ class ChangeImageStatsToImagenet(nn.Module):
 
         self.register_buffer("mean", mean)
         self.register_buffer("var", var)
+        self.sigmoid = nn.Sigmoid()
 
     def forward(self, x):
         if self.direction == ChangeState.NORMALIZE:
@@ -104,7 +105,7 @@ class ChangeImageStatsToImagenet(nn.Module):
 
     def _denormalize(self, x):
         
-        return (x * torch.sqrt(self.var + self.SIGMA_MIN)) + self.mean
+        return self.sigmoid(x)
 
     @staticmethod
     def _get_stats(channel_repeat_factor: int):

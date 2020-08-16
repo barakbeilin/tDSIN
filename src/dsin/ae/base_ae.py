@@ -41,6 +41,8 @@ class BaseAutoEncoder(nn.Module):
     def forward(self, x: torch.tensor, y: torch.tensor):
         # N| nof inpput Quantization Channels + 1|H/8|W/8
         # TODO: DELETE AND PASS INTO importance_map_layer DIRECTLY
+        # x is in [0,1] color range so need to multiply it back to [0,255] range
+        # for normalization to work.
         x_enc = self.enc(x * config.open_image_normalization)
 
         # improtance map - N|nof input quantization channels|H/8|W/8
@@ -84,5 +86,5 @@ class BaseAutoEncoder(nn.Module):
                 l2_weights,
             )
        
-       
-        return x_dec / config.open_image_normalization
+        # x_dec is after clamping to level between 0 and 1 by sigmoid
+        return x_dec
