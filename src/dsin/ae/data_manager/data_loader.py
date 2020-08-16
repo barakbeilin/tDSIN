@@ -61,7 +61,8 @@ class SideinformationImageImageList(ImageList):
 
         DONT CHANGE x !
         """
-        return ImageSiTuple(Image(t[0]), Image(t[1]))
+        
+        return ImageSiTuple(Image(t), Image(t))
 
     @classmethod
     def from_csv(cls, path: PathOrStr, csv_names: List, header: str = None,

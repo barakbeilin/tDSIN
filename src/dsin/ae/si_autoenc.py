@@ -72,7 +72,7 @@ class SideInformationAutoEncoder(nn.Module):
                 l2_weights,
             )
        
-        return x_reconstructed / config.open_image_normalization
+        return x_reconstructed
 
     def calc_y_syn(self, y, normalized_x_dec):
 
