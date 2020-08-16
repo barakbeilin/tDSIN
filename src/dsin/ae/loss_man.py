@@ -111,13 +111,13 @@ class LossManager(nn.Module):
             else 0 )
 
         self.si_net_loss_value = (
-            self.si_net_loss(x_reconstructed, x_orig)
+            self.si_net_loss(x_reconstructed, x_orig) * 255.0
             if self.use_side_infomation == SiNetChannelIn.WithSideInformation
             else 0
         )
 
 
-        self.autoencoder_loss_value = Distortions._calc_dist(
+        self.autoencoder_loss_value = 255.0 * Distortions._calc_dist(
             x_dec,
             x_orig,
             distortion=config.autoencoder_loss_distortion_to_minimize,
@@ -125,7 +125,7 @@ class LossManager(nn.Module):
         )
         self.l2_reg_loss = l2_weights * config.l2_reg_coeff
         self.total_loss = (self.l2_reg_loss
-            + self.autoencoder_loss_value * (1 - config.si_loss_weight_alpha)
+            + self.autoencoder_loss_value * (1 - config.si_loss_weight_alpha) 
             + self.si_net_loss_value * config.si_loss_weight_alpha
             + self.bit_cost_loss_value
             + self.feat_loss_value
