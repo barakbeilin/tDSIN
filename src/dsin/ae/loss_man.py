@@ -97,7 +97,7 @@ class LossManager(nn.Module):
         x_orig = args[1]  # orig img with color levels between 0 and 1 
        
        
-        self.bit_cost_loss_value = self._get_bit_cost_loss(
+        self.bit_cost_loss_value = 1.5 *self._get_bit_cost_loss(
             pc_output=x_pc,
             quantizer_closest_center_index=x_quantizer_index_of_closest_center,
             importance_map_mult_weights=importance_map_mult_weights,
