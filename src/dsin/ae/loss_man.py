@@ -82,7 +82,9 @@ class LossManager(nn.Module):
         self.bit_cost_loss = nn.CrossEntropyLoss(reduction="none")
         self.si_net_loss = nn.L1Loss(reduction="mean")
         self.use_side_infomation = use_side_infomation
-        self.feat_loss = FeatureLoss.create_loss()
+
+        if use_feat_loss:
+            self.feat_loss = FeatureLoss.create_loss()
         self.use_feat_loss = use_feat_loss
 
 
