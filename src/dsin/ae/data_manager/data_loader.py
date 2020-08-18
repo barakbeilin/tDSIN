@@ -7,6 +7,7 @@ class ImageSiTuple(ItemBase):
         self.img, self.si_img = img, si_img
         self.obj = (img, si_img),
         self._update_data()
+        self.dtype = None
 
     def _update_data(self):
         # self.data =[-1+2*self.img.data,-1+2*self.si_img.data]

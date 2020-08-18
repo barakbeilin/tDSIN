@@ -48,6 +48,11 @@ class SideInformationAutoEncoder(nn.Module):
         # N|3|H|W
         x_reconstructed = self.si_net(normalized_x_dec_y_syn)
         
+
+
+        l2_weights = 0
+        for p in self.parameters():
+            l2_weights += (p ** 2).sum()
         self.my_tuple = (y_syn,
                 normalized_y_syn,
                 x_reconstructed,  # for total loss
@@ -55,20 +60,23 @@ class SideInformationAutoEncoder(nn.Module):
                 x_pc,  # for probability classifier loss
                 importance_map_mult_weights,  # for probability classifier loss
                 x_quantizer_index_of_closest_center,  # for probability classifier loss
-                x,
-                y
-            )
-        if self.true_tuple_loss_false_just_out:
-            l2_weights = 0
-            for p in self.parameters():
-                l2_weights += (p ** 2).sum()
-            return (x_reconstructed,  # for total loss
-                x_dec,  # for auto-encoder loss
-                x_pc,  # for probability classifier loss
-                importance_map_mult_weights,  # for probability classifier loss
-                x_quantizer_index_of_closest_center,  # for probability classifier loss
                 l2_weights,
-            )
+                x,
+                y)
+
+
+        
+        # if self.true_tuple_loss_false_just_out:
+        #     l2_weights = 0
+        #     for p in self.parameters():
+        #         l2_weights += (p ** 2).sum()
+        #     return (x_reconstructed,  # for total loss
+        #         x_dec,  # for auto-encoder loss
+        #         x_pc,  # for probability classifier loss
+        #         importance_map_mult_weights,  # for probability classifier loss
+        #         x_quantizer_index_of_closest_center,  # for probability classifier loss
+        #         l2_weights,
+        #     )
        
         return x_reconstructed
 
