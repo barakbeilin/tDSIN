@@ -7,10 +7,25 @@ class ImageSiTuple(ItemBase):
         self.img, self.si_img = img, si_img
         self.obj = (img, si_img),
         self._update_data()
+    
+    @staticmethod
+    def data_to_si_img_and_img(data):
+        COLOR_CHANNEL = len(data.shape) - 3
+        combined_nof_color_channels = data.shape[COLOR_CHANNEL]
+
+        if combined_nof_color_channels % 2 != 0:
+            raise ValueError(f"bad shape in {data.shape}")
+        num_of_color_channels = combined_nof_color_channels // 2 
+        img = data[:,0: num_of_color_channels,...]
+        si_img = data[:,num_of_color_channels:,...]
+        return img, si_img
+
 
     def _update_data(self):
-        # self.data =[-1+2*self.img.data,-1+2*self.si_img.data]
-        self.data = [self.img.data, self.si_img.data]
+        if self.img.data.shape == self.si_img.data.shape:
+            self.data = torch.cat([self.img.data, self.si_img.data],dim =0)
+        else:
+            self.data = self.img.data
 
     def apply_tfms(self, tfms, **kwargs):
         self.img = self.img.apply_tfms(tfms, **kwargs)
@@ -19,8 +34,7 @@ class ImageSiTuple(ItemBase):
         return self
 
     def to_one(self):
-        # return Image(0.5+torch.cat(self.data,2)/2)
-        return Image(torch.cat(self.data, 1))
+        return Image(torch.cat([self.img.data, self.si_img.data], 1))
 
 
 class SegmentationProcessor(PreProcessor):
@@ -99,8 +113,6 @@ class SideinformationImageImageList(ImageList):
     def show_xyzs(self, xs, ys, zs, figsize: Tuple[int, int] = None, **kwargs):
         """Show `xs` (inputs), `ys` (targets) and `zs` (predictions) on a figure of `figsize`.
         `kwargs` are passed to the show method."""
-        import pdb
-        pdb.set_trace()
         figsize = ifnone(figsize, (12, 3*len(xs)))
         fig, axs = plt.subplots(2, len(xs), figsize=figsize)
         fig.suptitle('Ground truth / Predictions', weight='bold', size=14)

@@ -7,7 +7,7 @@ from dsin.ae.probclass import ProbClassifier
 from dsin.ae.importance_map import ImportanceMapMult
 from dsin.ae.si_finder import SiFinder
 from dsin.ae.kitti_normalizer import ChangeImageStatsToKitti, ChangeState
-
+from dsin.ae.data_manager.data_loader import ImageSiTuple
 
 class BaseAutoEncoder(nn.Module):
     def __init__(self):
@@ -38,7 +38,9 @@ class BaseAutoEncoder(nn.Module):
         self.denoramlize = ChangeImageStatsToKitti(
             direction=ChangeState.DENORMALIZE)
 
-    def forward(self, x: torch.tensor, y: torch.tensor):
+    # def forward(self, x: torch.tensor, y: torch.tensor):
+    def forward(self, combined_img_si_img):
+        x , y = ImageSiTuple.data_to_si_img_and_img(combined_img_si_img)
         # N| nof inpput Quantization Channels + 1|H/8|W/8
         # TODO: DELETE AND PASS INTO importance_map_layer DIRECTLY
         # x is in [0,1] color range so need to multiply it back to [0,255] range

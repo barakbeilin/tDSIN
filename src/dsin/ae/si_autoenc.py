@@ -8,6 +8,7 @@ from dsin.ae.importance_map import ImportanceMapMult
 from dsin.ae.si_net import SiNet, SiNetChannelIn
 from dsin.ae.si_finder import SiFinder
 from dsin.ae.kitti_normalizer import ChangeImageStatsToKitti, ChangeState
+from dsin.ae.data_manager.data_loader import ImageSiTuple
 
 
 class SideInformationAutoEncoder(nn.Module):
@@ -24,14 +25,17 @@ class SideInformationAutoEncoder(nn.Module):
 
         
 
-    def forward(self, x: torch.tensor, y: torch.tensor):
+    # def forward(self, x: torch.tensor, y: torch.tensor):
+    def forward(self, combined_img_si_img):
+        x , y = ImageSiTuple.data_to_si_img_and_img(combined_img_si_img)
+
         (_,  # for total loss
                 x_dec,  # for auto-encoder loss
                 x_pc,  # for probability classifier loss
                 importance_map_mult_weights,  # for probability classifier loss
                 x_quantizer_index_of_closest_center,  # for probability classifier loss
                 l2_weights,
-            ) = self.ae(x, y)
+            ) = self.ae(combined_img_si_img)
        
         y_syn = normalized_y_syn = None
         
