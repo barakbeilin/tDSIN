@@ -90,7 +90,7 @@ class LossManager(nn.Module):
         self.importnace_map_dict=dict()
 
 
-    def forward(self, *args):
+    def forward(self, *vargs):
 
 
        
@@ -100,7 +100,7 @@ class LossManager(nn.Module):
          x_dec,
          x_pc,
          importance_map_mult_weights,
-         x_quantizer_index_of_closest_center,_,_,
+         x_quantizer_index_of_closest_center,x,y,
          l2_weights,    
          ) = self.model.my_tuple
 
@@ -109,7 +109,7 @@ class LossManager(nn.Module):
         self.importnace_map_dict['var']= torch.var(importance_map_mult_weights)
 
 
-        x_orig = args[1]  # orig img with color levels between 0 and 1 
+        x_orig = x  # orig img with color levels between 0 and 1 
        
        
         self.bit_cost_loss_value = 2 *self._get_bit_cost_loss(
@@ -124,8 +124,8 @@ class LossManager(nn.Module):
             self.use_feat_loss 
             and self.use_side_infomation == SiNetChannelIn.WithSideInformation
             else 0 )
-        import pdb
-        pdb.set_trace()
+        # import pdb
+        # pdb.set_trace()
         self.si_net_loss_value = (
             self.si_net_loss(x_reconstructed, x_orig) * 255.0
             if self.use_side_infomation == SiNetChannelIn.WithSideInformation
