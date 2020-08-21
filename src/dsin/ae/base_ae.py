@@ -69,24 +69,27 @@ class BaseAutoEncoder(nn.Module):
         # N|3|H|W
         x_dec = self.dec(x_quantizer_soft)
       
-        self.my_tuple = (
+        
+        l2_weights = 0
+        for p in self.parameters():
+            l2_weights += (p ** 2).sum()
+        
+        self.my_tuple = (None, None,None,
                 x_dec,  # for auto-encoder loss
                 x_pc,  # for probability classifier loss
                 importance_map_mult_weights,  # for probability classifier loss
                 x_quantizer_index_of_closest_center,  # for probability classifier loss
-                x
+                x,
+                y,
+                l2_weights
             )
-        if self.true_tuple_loss_false_just_out:
-            l2_weights = 0
-            for p in self.parameters():
-                l2_weights += (p ** 2).sum()
-            return (None,  # for total loss
-                x_dec,  # for auto-encoder loss
-                x_pc,  # for probability classifier loss
-                importance_map_mult_weights,  # for probability classifier loss
-                x_quantizer_index_of_closest_center,  # for probability classifier loss
-                l2_weights,
-            )
+
+         
+
+
+
+
+       
        
         # x_dec is after clamping to level between 0 and 1 by sigmoid
         return x_dec

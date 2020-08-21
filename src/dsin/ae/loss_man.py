@@ -76,7 +76,7 @@ class FeatureLoss(nn.Module):
 class LossManager(nn.Module):
     log_natural_base_to_base2_factor = np.log2(np.e)
 
-    def __init__(self, use_side_infomation: SiNetChannelIn, use_feat_loss = False):
+    def __init__(self, model, use_side_infomation: SiNetChannelIn, use_feat_loss = False):
         super().__init__()
         # don't average over batches, will happen after importance map mult.
         self.bit_cost_loss = nn.CrossEntropyLoss(reduction="none")
@@ -86,15 +86,21 @@ class LossManager(nn.Module):
         if use_feat_loss:
             self.feat_loss = FeatureLoss.create_loss()
         self.use_feat_loss = use_feat_loss
+        self.model = model
 
 
     def forward(self, *args):
-        (x_reconstructed,
+        (_,_,x_reconstructed,
          x_dec,
          x_pc,
          importance_map_mult_weights,
-         x_quantizer_index_of_closest_center,
-         l2_weights) = args[0]
+         x_quantizer_index_of_closest_center,_,_,
+         l2_weights,    
+         ) = self.model.my_tuple
+
+
+     
+
 
         x_orig = args[1]  # orig img with color levels between 0 and 1 
        
