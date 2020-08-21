@@ -87,9 +87,15 @@ class LossManager(nn.Module):
             self.feat_loss = FeatureLoss.create_loss()
         self.use_feat_loss = use_feat_loss
         self.model = model
+        self.importnace_map_dict=dict()
 
 
     def forward(self, *args):
+
+
+       
+
+
         (_,_,x_reconstructed,
          x_dec,
          x_pc,
@@ -99,7 +105,8 @@ class LossManager(nn.Module):
          ) = self.model.my_tuple
 
 
-     
+        self.importnace_map_dict['mean']= torch.mean(importance_map_mult_weights)
+        self.importnace_map_dict['var']= torch.var(importance_map_mult_weights)
 
 
         x_orig = args[1]  # orig img with color levels between 0 and 1 
@@ -117,7 +124,8 @@ class LossManager(nn.Module):
             self.use_feat_loss 
             and self.use_side_infomation == SiNetChannelIn.WithSideInformation
             else 0 )
-
+        import pdb
+        pdb.set_trace()
         self.si_net_loss_value = (
             self.si_net_loss(x_reconstructed, x_orig) * 255.0
             if self.use_side_infomation == SiNetChannelIn.WithSideInformation
