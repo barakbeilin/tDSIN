@@ -51,7 +51,11 @@ class SideInformationAutoEncoder(nn.Module):
         normalized_y_syn = self.ae.noramlize(y_syn)
 
         # N|6|H|W, concat on channel dim
-        normalized_x_dec_y_syn = torch.cat((x_dec, normalized_y_syn), dim=1)
+        normalized_x_dec_y_syn = torch.cat((
+            self.ae.noramlize(x_dec * config.open_image_normalization),
+            normalized_y_syn),
+            dim=1)
+        # normalized_x_dec_y_syn = torch.cat((x_dec, normalized_y_syn), dim=1)
 
         # N|3|H|W
         x_reconstructed = self.si_net(normalized_x_dec_y_syn)
