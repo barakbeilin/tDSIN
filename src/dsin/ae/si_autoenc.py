@@ -16,7 +16,6 @@ class SideInformationAutoEncoder(nn.Module):
         super().__init__()
         self.ae = base_line_auto_enc
 
-        self.true_tuple_loss_false_just_out = True
 
         self.si_net = SiNet(
             in_channels=SiNetChannelIn.WithSideInformation, use_eye_init=False)

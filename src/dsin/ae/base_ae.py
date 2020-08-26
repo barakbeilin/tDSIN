@@ -14,7 +14,6 @@ class BaseAutoEncoder(nn.Module):
         super().__init__()
         self.enc = Encoder.create_module_from_const()
         self.dec = Decoder.create_module_from_const()
-        self.true_tuple_loss_false_just_out = True
         self.importance_map_layer = ImportanceMapMult(
             use_map=True, info_channels=config.quantizer_num_of_channels
         )
