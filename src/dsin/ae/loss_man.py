@@ -76,7 +76,7 @@ class FeatureLoss(nn.Module):
 class LossManager(nn.Module):
     log_natural_base_to_base2_factor = np.log2(np.e)
 
-    def __init__(self, model, use_side_infomation: SiNetChannelIn, use_feat_loss = False):
+    def __init__(self, model, use_side_infomation: SiNetChannelIn, use_feat_loss = False, target_bit_cost= config.H_target):
         super().__init__()
         # don't average over batches, will happen after importance map mult.
         self.bit_cost_loss = nn.CrossEntropyLoss(reduction="none")
@@ -88,6 +88,7 @@ class LossManager(nn.Module):
         self.use_feat_loss = use_feat_loss
         self.model = model
         self.importnace_map_dict=dict()
+        self.target_bit_cost = target_bit_cost
 
 
     def forward(self, *vargs):
@@ -117,7 +118,6 @@ class LossManager(nn.Module):
             quantizer_closest_center_index=x_quantizer_index_of_closest_center,
             importance_map_mult_weights=importance_map_mult_weights,
             beta_factor=config.beta,
-            target_bit_cost=config.H_target,
         )
 
         self.feat_loss_value = 20 * (self.feat_loss(x_reconstructed, x_orig) if 
@@ -154,7 +154,6 @@ class LossManager(nn.Module):
         quantizer_closest_center_index,
         importance_map_mult_weights,
         beta_factor,
-        target_bit_cost,
         device=None,
     ):
         """
@@ -163,7 +162,6 @@ class LossManager(nn.Module):
                 quantizer_closest_center_index: tensor NHW, value in [0,..,C-1]
                 importance_map_mult_weights: tensor NHW
                 beta_factor: float
-                target_bit_cost: float
             """
         # calculate crossentropy of the softmax of pc_output w.r.t the
         # indexes of the closest center of each pixel
@@ -192,4 +190,4 @@ class LossManager(nn.Module):
             t_zero = torch.tensor(
                 0.0, dtype=torch.float32, requires_grad=False)
 
-        return beta_factor * torch.max(self.soft_bit_entropy - target_bit_cost, t_zero)
+        return beta_factor * torch.max(self.soft_bit_entropy - self.target_bit_cost, t_zero)

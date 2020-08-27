@@ -5,7 +5,7 @@ from dsin.ae.si_net import SiNetChannelIn
 use_si_flag = SiNetChannelIn.NoSideInformation
 
 H_target = 2 * 0.02  # == 64/C * bpp
-beta = 500
+beta = 250
 quantizer_num_of_channels = 32
 quantizer_num_of_centers = 6
 quantizer_center_init_range = (-2, 2)
