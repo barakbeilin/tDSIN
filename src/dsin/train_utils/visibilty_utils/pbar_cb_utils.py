@@ -1,4 +1,6 @@
 from fastai import *
+from fastai.vision import *
+
 from fastai.callback import Callback
 
 
