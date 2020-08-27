@@ -82,7 +82,7 @@ class LossManager(nn.Module):
         self.bit_cost_loss = nn.CrossEntropyLoss(reduction="none")
         self.si_net_loss = nn.L1Loss(reduction="mean")
         self.use_side_infomation = use_side_infomation
-
+        
         if use_feat_loss:
             self.feat_loss = FeatureLoss.create_loss()
         self.use_feat_loss = use_feat_loss
@@ -90,11 +90,15 @@ class LossManager(nn.Module):
         self.importnace_map_dict=dict()
         self.target_bit_cost = target_bit_cost
 
+       
 
     def forward(self, *vargs):
 
 
-       
+        if hasattr(self.model,"quantizer"): #base_ae case
+            self.centers_regularization_term = self.model.quantizer.get_centers_regularization_term()
+        else: # si_ae case
+            self.centers_regularization_term = self.model.ae.quantizer.get_centers_regularization_term()
 
 
         (_,_,x_reconstructed,
@@ -141,6 +145,7 @@ class LossManager(nn.Module):
         )
         self.l2_reg_loss = l2_weights * config.l2_reg_coeff
         self.total_loss = (self.l2_reg_loss
+            + self.centers_regularization_term
             + self.autoencoder_loss_value * (1 - config.si_loss_weight_alpha) 
             + self.si_net_loss_value * config.si_loss_weight_alpha
             + self.bit_cost_loss_value

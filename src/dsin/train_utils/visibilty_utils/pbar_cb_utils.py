@@ -130,6 +130,7 @@ class ParameterRunningAverageMetricCallback(Callback):
                 
             self.pbar.child.comment += f' avg_bpp: {self.val / 2 :.4f} imp-mean-var({self.importance_map["mean"]:.2f} {self.importance_map["var"]:.2f})'
             msg = f"bitcost_loss={self.loss_man.bit_cost_loss_value:.1f} "
+            msg += f"qcent_loss={self.loss_man.centers_regularization_term:.1f} "
             msg += f"l2reg_loss={self.loss_man.l2_reg_loss:.1f} "
             msg += f"autoencoder_loss_value={ self.loss_man.autoencoder_loss_value:.1f} "
             msg += f"si_loss={self.loss_man.si_net_loss_value:.1f} "
