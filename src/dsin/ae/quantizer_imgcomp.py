@@ -49,10 +49,10 @@ class Quantizer(nn.Module):
         # Wrapping with nn.Parameter ensures it is copied to gpu when .to('cuda') is called
         self.centers = nn.Parameter(centers)
 
-    def get_centers_regularization_term(self):
-        # calculate half the l2 norm  like tf.nn.l2_loss(centers)
-        # return 0.5 * self.reg * (self.centers ** 2).sum().cpu()
-        return 0.5 * self.reg * torch.nn.MSELoss()(self.centers,self.centers.new_zeros(self.centers.shape))
+    # def get_centers_regularization_term(self):
+    #     # calculate half the l2 norm  like tf.nn.l2_loss(centers)
+    #     # return 0.5 * self.reg * (self.centers ** 2).sum().cpu()
+    #     return 0.5 * self.reg * torch.nn.MSELoss()(self.centers,self.centers.new_zeros(self.centers.shape))
 
     def __repr__(self):
         return f"{self.__class__.__name__}(sigma={self.sigma})"

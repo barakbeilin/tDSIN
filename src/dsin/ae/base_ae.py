@@ -69,9 +69,16 @@ class BaseAutoEncoder(nn.Module):
         x_dec = self.dec(x_quantizer_soft)
       
         
-        l2_weights = 0
-        for p in self.parameters():
-            l2_weights += (p ** 2).sum()
+        l2_weights = None 
+        for name, param in self.named_parameters():
+            
+            if name.startswith('enc') or name.startswith('dec'):
+                if l2_weights is None:
+                    l2_weights = 0.5 * torch.sum(param**2)
+                else:
+                    l2_weights = l2_weights + 0.5 * param.norm(2)**2
+
+  
         
         self.my_tuple = (None, None,None,
                 x_dec,  # for auto-encoder loss

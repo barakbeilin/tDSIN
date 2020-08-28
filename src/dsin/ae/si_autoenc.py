@@ -60,9 +60,9 @@ class SideInformationAutoEncoder(nn.Module):
         x_reconstructed = self.si_net(normalized_x_dec_y_syn)
         
         
-        l2_weights = 0
-        for p in self.parameters():
-            l2_weights += (p ** 2).sum()
+        # l2_weights = 0
+        # for p in self.parameters():
+        #     l2_weights += (p ** 2).sum()
             
         self.my_tuple = (y_syn,
                 normalized_y_syn,

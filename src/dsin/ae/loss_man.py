@@ -96,9 +96,11 @@ class LossManager(nn.Module):
 
 
         if hasattr(self.model,"quantizer"): #base_ae case
-            self.centers_regularization_term = self.model.quantizer.get_centers_regularization_term()
+            centers = self.model.quantizer.centers
         else: # si_ae case
-            self.centers_regularization_term = self.model.ae.quantizer.get_centers_regularization_term()
+            centers = self.model.ae.quantizer.centers
+
+        self.centers_regularization_term = 0.5 * 0.1 * (centers ** 2).sum()
 
 
         (_,_,x_reconstructed,
@@ -117,7 +119,7 @@ class LossManager(nn.Module):
         x_orig = x  # orig img with color levels between 0 and 1 
        
        
-        self.bit_cost_loss_value = 2 *self._get_bit_cost_loss(
+        self.bit_cost_loss_value = self._get_bit_cost_loss(
             pc_output=x_pc,
             quantizer_closest_center_index=x_quantizer_index_of_closest_center,
             importance_map_mult_weights=importance_map_mult_weights,
