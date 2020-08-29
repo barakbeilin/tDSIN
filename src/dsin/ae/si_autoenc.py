@@ -18,7 +18,7 @@ class SideInformationAutoEncoder(nn.Module):
 
 
         self.si_net = SiNet(
-            in_channels=SiNetChannelIn.WithSideInformation, use_eye_init=False)
+            in_channels=SiNetChannelIn.WithSideInformation)
 
         self.si_finder = SiFinder()
 
