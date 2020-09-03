@@ -97,7 +97,6 @@ class Distortions:
         if distortion.value == DistTypes.PSNR.value:
             loss = PSNRLoss()
         if distortion.value == DistTypes.MS_SSMIM.value:
-            loss = ms_ssim
-            return (1 - loss(x_l, target_l))
+            return (1 - ms_ssim(x_l, target_l,data_range=1))
 
         return loss(x_l, target_l)
