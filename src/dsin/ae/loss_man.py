@@ -76,7 +76,7 @@ class FeatureLoss(nn.Module):
 class LossManager(nn.Module):
     log_natural_base_to_base2_factor = np.log2(np.e)
 
-    def __init__(self, model, use_side_infomation: SiNetChannelIn, use_feat_loss = False, target_bit_cost= config.H_target):
+    def __init__(self, model, use_side_infomation: SiNetChannelIn, target_bit_cost, use_feat_loss = False ):
         super().__init__()
         # don't average over batches, will happen after importance map mult.
         self.bit_cost_loss = nn.CrossEntropyLoss(reduction="none")
