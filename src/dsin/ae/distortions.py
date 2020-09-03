@@ -81,9 +81,8 @@ class Distortions:
         raise ValueError("Invalid: {}".format(distortion_type))
 
     @staticmethod
-    def _calc_dist(
-        x: torch.tensor, target: torch.tensor, distortion: DistTypes = DistTypes.MS_SSMIM, cast_to_int: bool = False,
-    ) -> torch.tensor:
+    def _calc_dist(x: torch.tensor, target: torch.tensor, distortion: DistTypes = DistTypes.MS_SSMIM, cast_to_int: bool = False,) -> torch.tensor:
+
         if cast_to_int:
             # cast to int then to float since losses don't work with int.
             x_l = x.type(torch.IntTensor).type(torch.FloatTensor)
@@ -91,14 +90,14 @@ class Distortions:
         else:
             x_l, target_l = x, target
 
-        if distortion == DistTypes.MAE:
+        if distortion.value == DistTypes.MAE.value:
             loss = nn.L1Loss()
-        if distortion == DistTypes.MSE:
+        if distortion.value == DistTypes.MSE.value:
             loss = nn.MSELoss()
-        if distortion == DistTypes.PSNR:
+        if distortion.value == DistTypes.PSNR.value:
             loss = PSNRLoss()
-        if distortion == DistTypes.MS_SSMIM:
+        if distortion.value == DistTypes.MS_SSMIM.value:
             loss = ms_ssim
-            return config.K_MS_SSIM *(1 - loss(x_l, target_l))
+            return (1 - loss(x_l, target_l))
 
         return loss(x_l, target_l)

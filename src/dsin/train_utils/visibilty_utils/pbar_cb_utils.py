@@ -2,7 +2,7 @@ from fastai import *
 from fastai.vision import *
 
 from fastai.callback import Callback
-
+from dsin.ae.distortions import Distortions
 
 
 class BitEntropy(Callback):
@@ -54,6 +54,7 @@ class BitEntropy(Callback):
             msg += f"autoencoder_loss_value={ self.val_ae_loss:.1f}"
             msg += f"si_loss={self.val_si_loss:.1f}"
             msg += f"feat_loss_value={self.loss_man.feat_loss_value:.1f}"
+            msg +=f"mssim={Distortions._calc_dist(self.loss_man.x_orig,self.loss_man.x_reconstructed)}"
             self.logger.info(msg)
             print(msg)
         self.iter += 1
@@ -117,7 +118,14 @@ class ParameterRunningAverageMetricCallback(Callback):
         self.alpha = alpha
         self.val = None
     
+
+    def on_epoch_begin(self, **kwargs):
+        "Set the inner value to 0."
+        self.iter = 0
+        self.mssim_val = 1.0 
+
     def on_backward_begin(self,*args, **kwargs):
+        self.iter += 1
         self.pbar=kwargs["pbar"]
         self.importance_map=self.loss_man.importnace_map_dict
 
@@ -135,6 +143,9 @@ class ParameterRunningAverageMetricCallback(Callback):
             msg += f"autoencoder_loss_value={ self.loss_man.autoencoder_loss_value:.1f} "
             msg += f"si_loss={self.loss_man.si_net_loss_value:.1f} "
             msg += f"feat_loss_value={self.loss_man.feat_loss_value:.1f}"
-
+            msg +=f"mssim={ Distortions._calc_dist(self.loss_man.x_orig,self.loss_man.x_reconstructed) :.6f}"
+            # if self.iter % 20 == 0:
+            #     self.mssim_val = Distortions._calc_dist(self.loss_man.x_orig,self.loss_man.x_reconstructed)
+            #     self.iter = 0
             self.pbar.child.comment += msg
             

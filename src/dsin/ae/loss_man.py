@@ -103,11 +103,11 @@ class LossManager(nn.Module):
         self.centers_regularization_term = 0.5 * 0.1 * (centers ** 2).sum()
 
 
-        (_,_,x_reconstructed,
+        (_,_,self.x_reconstructed,
          x_dec,
          x_pc,
          importance_map_mult_weights,
-         x_quantizer_index_of_closest_center,x,y,
+         x_quantizer_index_of_closest_center, self.x_orig,y,
          l2_weights,    
          ) = self.model.my_tuple
 
@@ -116,7 +116,7 @@ class LossManager(nn.Module):
         self.importnace_map_dict['var']= torch.var(importance_map_mult_weights)
 
 
-        x_orig = x  # orig img with color levels between 0 and 1 
+        # self.x_orig - orig img with color levels between 0 and 1 
        
        
         self.bit_cost_loss_value = self._get_bit_cost_loss(
@@ -126,14 +126,14 @@ class LossManager(nn.Module):
             beta_factor=config.beta,
         )
 
-        self.feat_loss_value = 20 * (self.feat_loss(x_reconstructed, x_orig) if 
+        self.feat_loss_value = 20 * (self.feat_loss(self.x_reconstructed,  self.x_orig) if 
             self.use_feat_loss 
             and self.use_side_infomation == SiNetChannelIn.WithSideInformation
             else 0 )
         # import pdb
         # pdb.set_trace()
         self.si_net_loss_value = (
-            self.si_net_loss(x_reconstructed, x_orig) * 255.0
+            self.si_net_loss(self.x_reconstructed,  self.x_orig) * 255.0
             if self.use_side_infomation == SiNetChannelIn.WithSideInformation
             else 0
         )
@@ -141,7 +141,7 @@ class LossManager(nn.Module):
 
         self.autoencoder_loss_value = 255.0 * Distortions._calc_dist(
             x_dec,
-            x_orig,
+             self.x_orig,
             distortion=config.autoencoder_loss_distortion_to_minimize,
             cast_to_int=False,
         )
