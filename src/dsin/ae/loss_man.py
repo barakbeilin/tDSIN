@@ -104,7 +104,7 @@ class LossManager(nn.Module):
 
 
         (_,_,self.x_reconstructed,
-         x_dec,
+         self.x_dec,
          x_pc,
          importance_map_mult_weights,
          x_quantizer_index_of_closest_center, self.x_orig,y,
@@ -140,7 +140,7 @@ class LossManager(nn.Module):
 
 
         self.autoencoder_loss_value = 255.0 * Distortions._calc_dist(
-            x_dec,
+            self.x_dec,
              self.x_orig,
             distortion=config.autoencoder_loss_distortion_to_minimize,
             cast_to_int=False,

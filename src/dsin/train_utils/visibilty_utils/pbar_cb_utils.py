@@ -54,7 +54,6 @@ class BitEntropy(Callback):
             msg += f"autoencoder_loss_value={ self.val_ae_loss:.1f}"
             msg += f"si_loss={self.val_si_loss:.1f}"
             msg += f"feat_loss_value={self.loss_man.feat_loss_value:.1f}"
-            msg +=f"mssim={Distortions._calc_dist(self.loss_man.x_orig,self.loss_man.x_reconstructed)}"
             self.logger.info(msg)
             print(msg)
         self.iter += 1
@@ -113,11 +112,11 @@ class ProgressBarAttibuteVisualizer(Callback):
         
          
 class ParameterRunningAverageMetricCallback(Callback):
-    def __init__(self,loss_man,alpha=0.1):
+    def __init__(self,loss_man,alpha=0.1,use_si=True):
         self.loss_man = loss_man
         self.alpha = alpha
         self.val = None
-    
+        self.use_si=use_si
 
     def on_epoch_begin(self, **kwargs):
         "Set the inner value to 0."
@@ -143,9 +142,14 @@ class ParameterRunningAverageMetricCallback(Callback):
             msg += f"autoencoder_loss_value={ self.loss_man.autoencoder_loss_value:.1f} "
             msg += f"si_loss={self.loss_man.si_net_loss_value:.1f} "
             msg += f"feat_loss_value={self.loss_man.feat_loss_value:.1f}"
-            msg +=f"mssim={ Distortions._calc_dist(self.loss_man.x_orig,self.loss_man.x_reconstructed) :.6f}"
-            # if self.iter % 20 == 0:
-            #     self.mssim_val = Distortions._calc_dist(self.loss_man.x_orig,self.loss_man.x_reconstructed)
-            #     self.iter = 0
+            if self.iter % 20 == 0:
+                self.iter = 0
+                if self.use_si:
+                    self.mssim_val = Distortions._calc_dist(self.loss_man.x_orig,self.loss_man.x_reconstructed)
+                else:
+                    self.mssim_val = Distortions._calc_dist(self.loss_man.x_orig,self.loss_man.x_dec)
+            msg +=f"mssim={self.mssim_val :.6f}"
+
+
             self.pbar.child.comment += msg
             
