@@ -37,6 +37,19 @@ class BaseAutoEncoder(nn.Module):
         self.denoramlize = ChangeImageStatsToKitti(
             direction=ChangeState.DENORMALIZE)
 
+        def _weight_init(layer):
+            if type(layer) is nn.Conv2d or type(layer) is nn.ConvTranspose2d:
+                weight = getattr(layer, "weight")
+                nn.init.kaiming_uniform_(
+                    weight,
+                    mode="fan_in",
+                    nonlinearity="relu",
+                )
+
+
+
+        self.apply(_weight_init)
+
     # def forward(self, x: torch.tensor, y: torch.tensor):
     def forward(self, combined_img_si_img):
         x , y = ImageSiTuple.data_to_si_img_and_img(combined_img_si_img)
@@ -99,3 +112,4 @@ class BaseAutoEncoder(nn.Module):
        
         # x_dec is after clamping to level between 0 and 1 by sigmoid
         return x_dec
+
