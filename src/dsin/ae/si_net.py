@@ -98,24 +98,22 @@ class SiNetDSIN(nn.Module):
                 negative_slope=self.NEG_SLOPE)
             for i in range(self.NOF_INTERNAL_LAYERS)]
 
-        pre_layers = [
-            nn.Conv2d(
-                in_channels=in_channels.value,
-                out_channels=32,
-                kernel_size=[3, 3],
-                padding_mode="replicate",
-                padding=[1, 1],
-            ),
-            nn.LeakyReLU(negative_slope=self.NEG_SLOPE),
-           ]
-
-        post_layers = [
+        pre_layers = [ 
             Conv2dDSIN(
                 in_channels=32,
                 out_channels=32,
                 kernel_size=[3, 3],
                 dilation=1,
                 negative_slope=self.NEG_SLOPE),
+            Conv2dDSIN(
+                in_channels=32,
+                out_channels=32,
+                kernel_size=[3, 3],
+                dilation=1,
+                negative_slope=self.NEG_SLOPE),
+           ]
+
+        post_layers = [
             nn.Conv2d(in_channels=32, out_channels=3, kernel_size=[1, 1],),
             ChangeImageStatsToKitti(direction=ChangeState.DENORMALIZE),
         ]
