@@ -5,7 +5,7 @@ from dsin.ae.autoencoder_imgcomp import Encoder, Decoder
 from dsin.ae.quantizer_imgcomp import Quantizer
 from dsin.ae.probclass import ProbClassifier
 from dsin.ae.importance_map import ImportanceMapMult
-from dsin.ae.si_net import SiNet, SiNetChannelIn
+from dsin.ae.si_net import SiNetDSIN, SiNetChannelIn
 from dsin.ae.si_finder import SiFinder
 from dsin.ae.kitti_normalizer import ChangeImageStatsToKitti, ChangeState
 from dsin.ae.data_manager.data_loader import ImageSiTuple
@@ -17,7 +17,7 @@ class SideInformationAutoEncoder(nn.Module):
         self.ae = base_line_auto_enc
 
 
-        self.si_net = SiNet(
+        self.si_net = SiNetDSIN(
             in_channels=SiNetChannelIn.WithSideInformation)
 
         self.si_finder = SiFinder()
