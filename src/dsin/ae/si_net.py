@@ -203,5 +203,5 @@ class SiNet(nn.Module):
     def forward(self, x):
         pre_processed_x = self.pre_model(x)
         return (self.post_model(
-                    self.internal_model(pre_processed_x) + pre_processed_x
+                    self.internal_model(pre_processed_x) 
             ))
