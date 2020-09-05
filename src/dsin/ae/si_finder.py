@@ -238,11 +238,11 @@ class SiFinder(nn.Module):
         ##################
         # denominator
       
-        denominator_x = torch.sqrt(sum_of_x_square/patch_size - mean_x * mean_x)
+        denominator_x = sum_of_x_square/patch_size - mean_x * mean_x
 
         ##########
         # denominator_y = torch.sqrt(sum_of_y_square/patch_size - sum_y * sum_y / (patch_size ** 2))
-        denominator_y = torch.sqrt(F.conv2d(y ** 2, weight=mean_kernel)/patch_size - sum_y * sum_y / (patch_size ** 2))
+        denominator_y = F.conv2d(y ** 2, weight=mean_kernel)/patch_size - sum_y * sum_y / (patch_size ** 2)
         ##########
         # denominator = denominator_x * denominator_y
         ##################
@@ -250,7 +250,8 @@ class SiFinder(nn.Module):
         # s_coeff = (numerator + SiFinder.CORR_SIGMA) / (denominator + SiFinder.CORR_SIGMA)
         # l_coeff = ( 2 * sum_y * mean_x/patch_size  + SiFinder.CORR_SIGMA)/( sum_y * sum_y/(patch_size**2) + mean_x ** 2 + SiFinder.CORR_SIGMA)
         # c_coeff = (2 * numerator + SiFinder.CORR_SIGMA)/ (denominator_x** 2 +denominator_y**2 +  + SiFinder.CORR_SIGMA)
-        return (2 * numerator + SiFinder.CORR_SIGMA)/ (denominator_x** 2 +denominator_y**2 +  + SiFinder.CORR_SIGMA)
+      
+        return (2 * numerator + SiFinder.CORR_SIGMA)/ (torch.abs(denominator_x) +torch.abs(denominator_y) +  SiFinder.CORR_SIGMA)
         # import pdb
         # pdb.set_trace()
         # return  (((2 * numerator + SiFinder.CORR_SIGMA)/ (denominator_x** 2 +denominator_y**2 +  + SiFinder.CORR_SIGMA)) * 

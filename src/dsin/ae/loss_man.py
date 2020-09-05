@@ -138,18 +138,18 @@ class LossManager(nn.Module):
             else 0
         )
 
-        self.autoencoder_loss_value = 1000. * Distortions._calc_dist(
-            self.x_dec,
-            self.x_orig,
-            cast_to_int=False,
-        )
-
-        # self.autoencoder_loss_value = 255.0 * Distortions._calc_dist(
+        # self.autoencoder_loss_value = 1000. * Distortions._calc_dist(
         #     self.x_dec,
-        #      self.x_orig,
-        #     distortion=config.autoencoder_loss_distortion_to_minimize,
+        #     self.x_orig,
         #     cast_to_int=False,
         # )
+
+        self.autoencoder_loss_value = 255.0 * Distortions._calc_dist(
+            self.x_dec,
+             self.x_orig,
+            distortion=config.autoencoder_loss_distortion_to_minimize,
+            cast_to_int=False,
+        )
         self.l2_reg_loss = l2_weights * config.l2_reg_coeff
         self.total_loss = (self.l2_reg_loss
             + self.centers_regularization_term

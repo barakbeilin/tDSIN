@@ -14,14 +14,15 @@ class Conv2dDSIN(nn.Module):
     def __init__(self, in_channels, out_channels, kernel_size, dilation, negative_slope):
         super().__init__()
         self.negative_slope = negative_slope
-        self.layers = [nn.Conv2d(
-            in_channels=32,
-            out_channels=32,
-            kernel_size=[3, 3],
-            dilation=dilation,
-            padding_mode="replicate",
-            padding=[dilation, dilation],
-        ),
+        self.layers = [
+            nn.Conv2d(
+                in_channels=in_channels,
+                out_channels=out_channels,
+                kernel_size=kernel_size,
+                dilation=dilation,
+                padding_mode="replicate",
+                padding=[dilation, dilation],
+            ),
             nn.LeakyReLU(negative_slope=negative_slope),
         ]
         self._weight_init()
@@ -48,9 +49,9 @@ class DilatedResBlock(nn.Module):
         super().__init__()
         self.negative_slope = negative_slope
         self.layers = [nn.Conv2d(
-            in_channels=32,
-            out_channels=32,
-            kernel_size=[3, 3],
+            in_channels=in_channels,
+            out_channels=out_channels,
+            kernel_size=kernel_size,
             dilation=dilation,
             padding_mode="replicate",
             padding=[dilation, dilation],
@@ -100,20 +101,21 @@ class SiNetDSIN(nn.Module):
 
         pre_layers = [ 
             Conv2dDSIN(
-                in_channels=32,
+                in_channels=in_channels.value,
                 out_channels=32,
                 kernel_size=[3, 3],
                 dilation=1,
                 negative_slope=self.NEG_SLOPE),
+         
+           ]
+
+        post_layers = [
             Conv2dDSIN(
                 in_channels=32,
                 out_channels=32,
                 kernel_size=[3, 3],
                 dilation=1,
                 negative_slope=self.NEG_SLOPE),
-           ]
-
-        post_layers = [
             nn.Conv2d(in_channels=32, out_channels=3, kernel_size=[1, 1],),
             ChangeImageStatsToKitti(direction=ChangeState.DENORMALIZE),
         ]
